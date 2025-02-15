@@ -17,9 +17,9 @@ mongoose.connect("mongodb://localhost:27017/lbry", {
 
 });
 
-app.get("/orders", (req, res) => {
+app.get("/orders", async (req, res) => {
     // Get last 50 orders from the database, filter by status
-    const orders = Order.find({ status: "active" })
+    const orders = await Order.find({ status: "active" })
         .sort({ date: -1 })
         .limit(50);
 
