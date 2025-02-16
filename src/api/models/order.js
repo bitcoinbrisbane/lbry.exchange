@@ -23,7 +23,11 @@ const orderSchema = new mongoose.Schema({
         type: Date,
         required: true,
     },
-    recipient: {
+    expiry: {
+        type: Date,
+        required
+    },
+    address: {
         type: String,
         required: true,
     },
