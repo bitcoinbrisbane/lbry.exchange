@@ -1,9 +1,18 @@
 const express = require("express");
+const cors = require('cors');
 const app = express();
-app.use(express.json());
+
+// Enable CORS for all routes
+app.use(cors({
+    origin: 'http://localhost:5173', // Your frontend URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Import the Order model
 const Order = require("./models/order");
+
+app.use(express.json());
 
 app.get("/", (req, res) => {
     res.send("Make lbry great again!");
@@ -150,6 +159,30 @@ const getLbryDepositAddress = async () => {
 const getBalance = async (address) => {
     return 1000;
 };
+
+app.get("/orders/:USDC_Address", async (req, res) => {
+    try {
+        const { USDC_Address } = req.params;
+        
+        // Find all orders for this USDC address
+        const orders = await Order.find({ 
+            USDC_Address: USDC_Address 
+        }).sort({ date: -1 }); // Sort by date, newest first
+        
+        if (!orders || orders.length === 0) {
+            return res.status(404).json({ 
+                message: "No orders found for this address" 
+            });
+        }
+
+        res.json(orders);
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ 
+            error: "Failed to fetch orders" 
+        });
+    }
+});
 
 app.listen(3000, () => {
     console.log("Server is running on port 3000");
