@@ -14,25 +14,42 @@ import {
   StatLabel,
   StatNumber,
   Divider,
-  Progress
+  Progress,
+  HStack,
+  Flex
 } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
 import { useWallet } from '../hooks/useWallet'
 import { useRate } from '../hooks/useRate'
+import axios from 'axios'
+import { API_BASE_URL } from '../config/constants'
 
 export function OrderComponent() {
+  // 1. Define all color mode values first
   const bgColor = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.700')
-  const toast = useToast()
+  const quoteBgColor = useColorModeValue('gray.50', 'gray.700')
+  const supplyBgColor = useColorModeValue('gray.100', 'gray.700')
   
+  // 2. Other hooks
+  const toast = useToast()
   const { address, isConnecting, error: walletError, connectWallet } = useWallet()
   const { rate, loading: rateLoading, error: rateError } = useRate()
+  
+  // 3. State hooks
   const [amount, setAmount] = useState('')
   const [loading, setLoading] = useState(false)
   const [quote, setQuote] = useState(null)
   const [timeLeft, setTimeLeft] = useState(0)
 
-  // Countdown timer effect
+  // 4. Define helper functions
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  // 5. Define effects
   useEffect(() => {
     if (!timeLeft) return
 
@@ -49,6 +66,7 @@ export function OrderComponent() {
     return () => clearInterval(intervalId)
   }, [timeLeft])
 
+  // 6. Define handlers
   const handleGetQuote = () => {
     console.log('Getting quote with rate:', rate, 'and amount:', amount)
     
@@ -105,30 +123,35 @@ export function OrderComponent() {
 
     setLoading(true)
     try {
-      const order = {
-        type: 'buyLBC',
-        quantity: quote.amount,
-        USDC_Address: address,
-        USDC_Requested: parseFloat(quote.total),
-        LBC_Requested: quote.amount,
-        status: 'pending',
-        date: new Date(),
-        expiry: new Date(Date.now() + 30 * 60000), // 30 minutes from now
+      const orderData = {
+        LBC_Address: "0x0", // This should be set to the user's LBC address
+        quantity: parseFloat(quote.amount),
+        USDC_Address: address
       }
+
+      console.log('Submitting order:', orderData)
       
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Replace with actual API call
+      const response = await axios.post(`${API_BASE_URL}/orders/buy`, orderData)
       
+      console.log('Order saved:', response.data)
+
       toast({
         title: "Order submitted",
-        description: `Processing purchase for ${quote.amount} LBC`,
+        description: `Order created for ${quote.amount} LBC`,
         status: "success",
         duration: 5000,
         isClosable: true,
       })
+
+      setAmount('')
+      setQuote(null)
+      setTimeLeft(0)
+      
     } catch (error) {
+      console.error('Order submission error:', error)
       toast({
         title: "Error",
-        description: "Failed to process purchase. Please try again.",
+        description: error.response?.data?.error || "Failed to process order. Please try again.",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -138,12 +161,7 @@ export function OrderComponent() {
     }
   }
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
+  // 7. Return JSX
   return (
     <Box
       p={6}
@@ -154,9 +172,20 @@ export function OrderComponent() {
       shadow="md"
     >
       <VStack spacing={4} align="stretch">
-        <Text fontSize="2xl" fontWeight="bold">
-          Buy LBC
-        </Text>
+        <Flex justify="space-between" align="center">
+          <Text fontSize="2xl" fontWeight="bold">
+            Buy LBC
+          </Text>
+          <Box 
+            bg={supplyBgColor}
+            px={3}
+            py={2}
+            borderRadius="md"
+          >
+            <Text fontSize="sm" color="gray.500">Total Supply</Text>
+            <Text fontSize="md" fontWeight="bold">654.23M LBC</Text>
+          </Box>
+        </Flex>
         
         {(walletError || rateError) && (
           <Alert status="error">
@@ -204,7 +233,7 @@ export function OrderComponent() {
                 </Button>
 
                 {quote && timeLeft > 0 && (
-                  <Box p={4} bg={useColorModeValue('gray.50', 'gray.700')} borderRadius="md">
+                  <Box p={4} bg={quoteBgColor} borderRadius="md">
                     <VStack spacing={2} align="stretch">
                       <Box mb={2}>
                         <Text fontSize="sm" mb={1}>Quote expires in: {formatTime(timeLeft)}</Text>
