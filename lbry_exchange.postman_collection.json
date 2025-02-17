@@ -98,29 +98,6 @@
           "path": ["rate"]
         }
       }
-    },
-    {
-      "name": "Update Rate",
-      "request": {
-        "method": "POST",
-        "url": {
-          "raw": "http://localhost:3000/rate",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "3000",
-          "path": ["rate"]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"rate\": 0.0035\n}"
-        }
-      }
     }
   ]
 } 

@@ -42,15 +42,7 @@ const getRate = () => {
     return LBC_USDC_RATE;
 };
 
-// Function to update rate (you might want to add authentication later)
-app.post("/rate", (req, res) => {
-    if (req.body.rate) {
-        LBC_USDC_RATE = parseFloat(req.body.rate);
-        res.json({ rate: LBC_USDC_RATE });
-    } else {
-        res.status(400).json({ error: "Rate is required" });
-    }
-});
+
 
 // Get current rate
 app.get("/rate", (req, res) => {
