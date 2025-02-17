@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Home } from './pages/Home'
+import { Header } from './components/Header'
 
 // Create a Field component since we don't have access to @/components/ui/field
 const Field = ({ label, children, invalid, errorText, required }) => (
@@ -36,7 +37,7 @@ const Field = ({ label, children, invalid, errorText, required }) => (
   </Box>
 );
 
-function App() {
+export function App() {
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState(null);
 
@@ -86,13 +87,12 @@ function App() {
   };
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        {/* Redirect all unknown routes to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+    <Box minH="100vh">
+      <Header />
+      <Box as="main" py={8}>
+        <Home />
+      </Box>
+    </Box>
   );
 }
 

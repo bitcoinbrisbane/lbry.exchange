@@ -11,7 +11,8 @@ import {
   Spinner,
   Alert,
   AlertIcon,
-  Badge
+  Badge,
+  Tooltip
 } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
@@ -106,6 +107,7 @@ export function OrderHistory() {
                 <Th>Amount (LBC)</Th>
                 <Th>Price (USDC)</Th>
                 <Th>Status</Th>
+                <Th>LBC Address</Th>
                 <Th>Expiry</Th>
               </Tr>
             </Thead>
@@ -120,6 +122,11 @@ export function OrderHistory() {
                     <Badge colorScheme={getStatusColor(order.status)}>
                       {order.status}
                     </Badge>
+                  </Td>
+                  <Td>
+                    <Tooltip label={order.LBC_Address}>
+                      {order.LBC_Address.slice(0, 6)}...{order.LBC_Address.slice(-4)}
+                    </Tooltip>
                   </Td>
                   <Td>{formatDate(order.expiry)}</Td>
                 </Tr>
