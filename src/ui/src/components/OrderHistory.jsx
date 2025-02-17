@@ -12,14 +12,17 @@ import {
   Alert,
   AlertIcon,
   Badge,
-  Tooltip
+  Tooltip,
+  Stat,
+  StatLabel,
+  StatNumber
 } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { API_BASE_URL } from '../config/constants'
 import { useWallet } from '../hooks/useWallet'
 
-export function OrderHistory() {
+export function OrderHistory({ refreshTrigger }) {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -27,30 +30,30 @@ export function OrderHistory() {
   const bgColor = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.700')
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!address) return
+  const fetchOrders = async () => {
+    if (!address) return
+    
+    setLoading(true)
+    try {
+      const encodedAddress = encodeURIComponent(address)
+      console.log('Fetching orders for address:', address)
       
-      setLoading(true)
-      try {
-        const encodedAddress = encodeURIComponent(address)
-        console.log('Fetching orders for address:', address)
-        
-        const response = await axios.get(`${API_BASE_URL}/orders/${encodedAddress}`)
-        console.log('Orders received:', response.data)
-        
-        setOrders(response.data)
-        setError(null)
-      } catch (error) {
-        console.error('Failed to fetch orders:', error)
-        setError(error.response?.data?.message || 'Failed to fetch orders')
-      } finally {
-        setLoading(false)
-      }
+      const response = await axios.get(`${API_BASE_URL}/orders/${encodedAddress}`)
+      console.log('Orders received:', response.data)
+      
+      setOrders(response.data)
+      setError(null)
+    } catch (error) {
+      console.error('Failed to fetch orders:', error)
+      setError(error.response?.data?.message || 'Failed to fetch orders')
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchOrders()
-  }, [address])
+  }, [address, refreshTrigger])
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -105,32 +108,38 @@ export function OrderHistory() {
                 <Th>Date</Th>
                 <Th>Type</Th>
                 <Th>Amount (LBC)</Th>
-                <Th>Price (USDC)</Th>
+                <Th>Price per LBC</Th>
+                <Th>Total USDC</Th>
                 <Th>Status</Th>
                 <Th>LBC Address</Th>
                 <Th>Expiry</Th>
               </Tr>
             </Thead>
             <Tbody>
-              {orders.map((order) => (
-                <Tr key={order._id}>
-                  <Td>{formatDate(order.date)}</Td>
-                  <Td>{order.type}</Td>
-                  <Td isNumeric>{order.quantity}</Td>
-                  <Td isNumeric>{order.price}</Td>
-                  <Td>
-                    <Badge colorScheme={getStatusColor(order.status)}>
-                      {order.status}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    <Tooltip label={order.LBC_Address}>
-                      {order.LBC_Address.slice(0, 6)}...{order.LBC_Address.slice(-4)}
-                    </Tooltip>
-                  </Td>
-                  <Td>{formatDate(order.expiry)}</Td>
-                </Tr>
-              ))}
+              {orders.map((order) => {
+                const totalUSDC = (order.quantity * order.price).toFixed(2)
+                
+                return (
+                  <Tr key={order._id}>
+                    <Td>{formatDate(order.date)}</Td>
+                    <Td>{order.type}</Td>
+                    <Td isNumeric>{order.quantity.toFixed(2)}</Td>
+                    <Td isNumeric>${order.price.toFixed(2)}</Td>
+                    <Td isNumeric>${totalUSDC}</Td>
+                    <Td>
+                      <Badge colorScheme={getStatusColor(order.status)}>
+                        {order.status}
+                      </Badge>
+                    </Td>
+                    <Td>
+                      <Tooltip label={order.LBC_Address}>
+                        {order.LBC_Address.slice(0, 6)}...{order.LBC_Address.slice(-4)}
+                      </Tooltip>
+                    </Td>
+                    <Td>{formatDate(order.expiry)}</Td>
+                  </Tr>
+                )
+              })}
             </Tbody>
           </Table>
         </Box>
