@@ -126,10 +126,11 @@ export function OrderComponent() {
       const orderData = {
         LBC_Address: "0x0", // This should be set to the user's LBC address
         quantity: parseFloat(quote.amount),
-        USDC_Address: address
+        USDC_Address: address // This is the connected wallet address
       }
 
-      console.log('Submitting order:', orderData)
+      console.log('Submitting order with wallet address:', address)
+      console.log('Full order data:', orderData)
       
       const response = await axios.post(`${API_BASE_URL}/orders/buy`, orderData)
       
@@ -137,7 +138,7 @@ export function OrderComponent() {
 
       toast({
         title: "Order submitted",
-        description: `Order created for ${quote.amount} LBC`,
+        description: `Order created for ${quote.amount} LBC with wallet ${address.slice(0, 6)}...${address.slice(-4)}`,
         status: "success",
         duration: 5000,
         isClosable: true,

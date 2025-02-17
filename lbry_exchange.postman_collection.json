@@ -18,6 +18,26 @@
       }
     },
     {
+      "name": "Get Orders by USDC Address",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:3000/orders/:USDC_Address",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["orders", ":USDC_Address"],
+          "variable": [
+            {
+              "key": "USDC_Address",
+              "value": "0x123...",
+              "description": "Ethereum address of the USDC wallet"
+            }
+          ]
+        }
+      }
+    },
+    {
       "name": "Create Buy Order",
       "request": {
         "method": "POST",
@@ -36,7 +56,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"quantity\": 100,\n    \"LBC_Address\": \"your-lbc-address\",\n    \"price\": 0.5\n}"
+          "raw": "{\n    \"quantity\": 100,\n    \"LBC_Address\": \"your-lbc-address\",\n    \"USDC_Address\": \"your-usdc-address\"\n}"
         }
       }
     },

@@ -81,7 +81,7 @@ app.post("/orders/buy", async (req, res) => {
             expiry: new Date(Date.now() + 1000 * 600), // 10 minutes
             quantity: req.body.quantity,
             price: currentRate,
-            USDC_Address: null,
+            USDC_Address: req.body.USDC_Address,
             LBC_Requested: req.body.quantity
         });
 

@@ -1,6 +1,6 @@
 import { Container, Heading, VStack, Text } from '@chakra-ui/react'
 import { OrderComponent } from '../components/OrderComponent'
-
+import { OrderHistory } from '../components/OrderHistory'
 export function Home() {
   return (
     <Container maxW="container.xl" py={8}>
@@ -14,6 +14,7 @@ export function Home() {
         </Text>
 
         <OrderComponent />
+        <OrderHistory />
       </VStack>
     </Container>
   )
