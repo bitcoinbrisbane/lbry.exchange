@@ -34,6 +34,32 @@ app.get("/price", (req, res) => {
     });
 });
 
+// Initial rate: 1 USDC = 0.0035 LBC
+let LBC_USDC_RATE = 0.0035;
+
+// Function to get current rate
+const getRate = () => {
+    return LBC_USDC_RATE;
+};
+
+// Function to update rate (you might want to add authentication later)
+app.post("/rate", (req, res) => {
+    if (req.body.rate) {
+        LBC_USDC_RATE = parseFloat(req.body.rate);
+        res.json({ rate: LBC_USDC_RATE });
+    } else {
+        res.status(400).json({ error: "Rate is required" });
+    }
+});
+
+// Get current rate
+app.get("/rate", (req, res) => {
+    res.json({ 
+        rate: getRate(),
+        example: `1 USDC = ${getRate()} LBC`
+    });
+});
+
 app.post("/orders/buy", async (req, res) => {
     try {
         // Validate required fields
@@ -44,6 +70,8 @@ app.post("/orders/buy", async (req, res) => {
             return res.status(400).json({ error: "quantity is required" });
         }
 
+        const currentRate = getRate();
+        
         const order = new Order({
             type: 'buyLBC',
             date: new Date(),
@@ -51,13 +79,19 @@ app.post("/orders/buy", async (req, res) => {
             LBC_Address: req.body.LBC_Address,
             expiry: new Date(Date.now() + 1000 * 600), // 10 minutes
             quantity: req.body.quantity,
-            price: req.body.price || null,
-            USDC_Address: req.body.USDC_Address || null,  // not needed but we can get from matching up the open order with the incoming request
-            LBC_Requested: req.body.quantity  // Required, same as quantity for buy orders
+            price: currentRate,
+            USDC_Address: null,
+            LBC_Requested: req.body.quantity
         });
 
         await order.save();
-        res.json(order);
+        
+        // Return order with rate information
+        res.json({
+            ...order.toJSON(),
+            rate: currentRate,
+            usdcNeeded: order.quantity / currentRate  // Calculate USDC needed
+        });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

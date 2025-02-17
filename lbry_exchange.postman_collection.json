@@ -1,0 +1,126 @@
+{
+  "info": {
+    "name": "LBRY Exchange API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get Orders",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:3000/orders",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["orders"]
+        }
+      }
+    },
+    {
+      "name": "Create Buy Order",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:3000/orders/buy",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["orders", "buy"]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"quantity\": 100,\n    \"LBC_Address\": \"your-lbc-address\",\n    \"price\": 0.5\n}"
+        }
+      }
+    },
+    {
+      "name": "Create Sell Order",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:3000/orders/sell",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["orders", "sell"]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"quantity\": 100,\n    \"price\": 0.5,\n    \"LBC_Address\": \"your-lbc-address\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Update Order Status",
+      "request": {
+        "method": "PUT",
+        "url": {
+          "raw": "http://localhost:3000/orders/:id",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["orders", ":id"]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"status\": \"filled\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Get Rate",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:3000/rate",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["rate"]
+        }
+      }
+    },
+    {
+      "name": "Update Rate",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:3000/rate",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["rate"]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"rate\": 0.0035\n}"
+        }
+      }
+    }
+  ]
+} 
