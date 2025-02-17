@@ -17,13 +17,14 @@ mongoose.connect("mongodb://localhost:27017/lbry", {
 });
 
 app.get("/orders", async (req, res) => {
-    // Get last 50 orders from the database, filter by status
-    const orders = await Order.find({ status: "active" })
-        .sort({ date: -1 })
-        .limit(50);
-
-    // Send the orders as a response as JSON
-    res.json(orders);
+    try {
+        const orders = await Order.find({ status: "pending" })
+            .sort({ date: -1 })
+            .limit(50);
+        res.json(orders);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 app.get("/price", (req, res) => {
@@ -33,53 +34,108 @@ app.get("/price", (req, res) => {
     });
 });
 
-app.post("/orders/buy", async (req, res) => {
-    const address = await getLbryDepositAddress();
+// Initial rate: 1 USDC = 0.0035 LBC
+let LBC_USDC_RATE = 0.0035;
 
-    // Create a new order
-    const order = new Order({
-        date: new Date(),
-        status: "active",
-        address,
-        expiry: new Date(Date.now() + 1000 * 600), // 10 minutes from now
-        ...req.body
+// Function to get current rate
+const getRate = () => {
+    return LBC_USDC_RATE;
+};
+
+// Function to update rate (you might want to add authentication later)
+app.post("/rate", (req, res) => {
+    if (req.body.rate) {
+        LBC_USDC_RATE = parseFloat(req.body.rate);
+        res.json({ rate: LBC_USDC_RATE });
+    } else {
+        res.status(400).json({ error: "Rate is required" });
+    }
+});
+
+// Get current rate
+app.get("/rate", (req, res) => {
+    res.json({ 
+        rate: getRate(),
+        example: `1 USDC = ${getRate()} LBC`
     });
+});
 
-    // Save the order to the database
-    await order.save();
+app.post("/orders/buy", async (req, res) => {
+    try {
+        // Validate required fields
+        if (!req.body.LBC_Address) {
+            return res.status(400).json({ error: "LBC_Address is required" });
+        }
+        if (!req.body.quantity) {
+            return res.status(400).json({ error: "quantity is required" });
+        }
 
-    // Send the order as a response
-    res.json(order);
+        const currentRate = getRate();
+        
+        const order = new Order({
+            type: 'buyLBC',
+            date: new Date(),
+            status: 'pending',
+            LBC_Address: req.body.LBC_Address,
+            expiry: new Date(Date.now() + 1000 * 600), // 10 minutes
+            quantity: req.body.quantity,
+            price: currentRate,
+            USDC_Address: null,
+            LBC_Requested: req.body.quantity
+        });
+
+        await order.save();
+        
+        // Return order with rate information
+        res.json({
+            ...order.toJSON(),
+            rate: currentRate,
+            usdcNeeded: order.quantity / currentRate  // Calculate USDC needed
+        });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
 });
 
 app.post("/orders/sell", async (req, res) => {
-    const address = await getLbryDepositAddress();
+    try {
+        const order = new Order({
+            type: 'sellLBC',
+            date: new Date(),
+            status: 'pending',
+            LBC_Address: req.body.LBC_Address,
+            expiry: new Date(Date.now() + 1000 * 600), // 10 minutes
+            quantity: req.body.quantity,
+            price: req.body.price,
+            USDC_Address: await getLbryDepositAddress(),
+            LBC_Requested: req.body.quantity
+        });
 
-    // Create a new order
-    const order = new Order({
-        date: new Date(),
-        status: "active",
-        address,
-        expiry: new Date(Date.now() + 1000 * 600), // 10 minutes from now
-        ...req.body
-    });
-
-    // Save the order to the database
-    await order.save();
-
-    // Send the order as a response
-    res.json(order);
+        await order.save();
+        res.json(order);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
 });
 
-// Poll this endpoint to get the balance of the deposit address
+// Update order status
 app.put("/orders/:id", async (req, res) => {
-    // Get the order ID from the URL
-    const { id } = req.params;
-
-    // Find the order by ID
-    const order = await Order.findById(id);
-
-    // Get the deposit address
+    try {
+        const { id } = req.params;
+        const order = await Order.findByIdAndUpdate(
+            id,
+            { status: req.body.status },
+            { new: true }
+        );
+        
+        if (!order) {
+            return res.status(404).json({ error: "Order not found" });
+        }
+        
+        res.json(order);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
 });
 
 app.post("/bridge", async (req, res) => {

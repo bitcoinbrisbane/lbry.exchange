@@ -4,20 +4,22 @@ const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema({
     type: {
-        type: String,
+        type: String,  // buyLBC or sellLBC
         required: true,
+        enum: ['buyLBC', 'sellLBC']
     },
     quantity: {
-        type: BigInt,
+        type: Number,
         required: true,
     },
     status: {
         type: String,
         required: true,
+        enum: ['pending', 'filled', 'cancelled']
     },
     price: {
         type: Number,
-        required: true,
+        required: false,
     },
     date: {
         type: Date,
@@ -25,11 +27,23 @@ const orderSchema = new mongoose.Schema({
     },
     expiry: {
         type: Date,
-        required
+        required: true
     },
-    address: {
+    LBC_Address: {
         type: String,
         required: true,
+    },
+    USDC_Address: {
+        type: String,
+        required: false,
+    },
+    LBC_Requested: {
+        type: Number,
+        required: false,
+    },
+    USDC_Requested: {
+        type: Number,
+        required: false,
     },
 });
 
