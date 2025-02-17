@@ -19,6 +19,7 @@ contract Bridge is Ownable {
     }
 
     mapping(uint256 => Order) public orders;
+    mapping(bytes32 => bool) public withdrawals;
 
     constructor() {
         // This is a placeholder
@@ -46,6 +47,19 @@ contract Bridge is Ownable {
         // This is a placeholder
         nonce = nextNonce;
         nextNonce++;
+    }
+
+    function withdraw(address recipent, uint256 amount, bytes32 txId, bytes signature) external {
+        require(amount > 0, "withdraw: invalid quantity");
+        require(!withdarwals[txId], "withdraw: already processed");
+
+        bytes32 messageHash = keccak256(abi.encodePacked(recipent, amount, txId));
+        address signer = recoverSignerAddress(getEthSignedMessageHash(messageHash), signature);
+
+        require(signer == owner(), "withdraw: invalid signature");
+
+        withdarwals[txId] = true;
+        IERC20(token).safeTransfer(receiver, amount);
     }
 
     event Bought(address indexed sender, uint256 quantity, address token, uint256 nonce);
