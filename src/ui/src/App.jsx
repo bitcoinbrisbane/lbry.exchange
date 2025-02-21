@@ -16,6 +16,7 @@ import { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Home } from './pages/Home'
 import { Header } from './components/Header'
+import { API_BASE_URL } from "./config/constants";
 
 // Create a Field component since we don't have access to @/components/ui/field
 const Field = ({ label, children, invalid, errorText, required }) => (
@@ -55,7 +56,7 @@ export function App() {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const response = await fetch("https://goldfish-app-wktcj.ondigitalocean.app/orders/buy", {
+      const response = await fetch(`${API_BASE_URL}/orders/buy`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
