@@ -13,9 +13,14 @@ import {
 } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { Home } from './pages/Home'
-import { Header } from './components/Header'
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { Home } from "./pages/Home";
+import { Header } from "./components/Header";
 import { API_BASE_URL } from "./config/constants";
 
 // Create a Field component since we don't have access to @/components/ui/field
@@ -72,7 +77,9 @@ export function App() {
       if (response.ok) {
         setAlert({
           status: "success",
-          message: `Order created. You need to send ${responseData.usdcNeeded.toFixed(2)} USDC`,
+          message: `Order created. You need to send ${responseData.usdcNeeded.toFixed(
+            2
+          )} USDC`,
         });
       } else {
         throw new Error(responseData.error);

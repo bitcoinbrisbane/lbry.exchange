@@ -1,1 +1,1 @@
-export const API_BASE_URL = 'https://goldfish-app-wktcj.ondigitalocean.app' 
+export const API_BASE_URL = 'https://api-wvnt6.ondigitalocean.app' 
