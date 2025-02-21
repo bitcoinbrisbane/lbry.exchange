@@ -4,7 +4,11 @@ const app = express();
 
 // Enable CORS for all routes
 app.use(cors({
-    origin: 'http://localhost:5173', // Your frontend URL
+    origin: [
+        'http://localhost:5173',
+        'https://goldfish-app-wktcj.ondigitalocean.app',
+        'https://lbry.exchange'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
