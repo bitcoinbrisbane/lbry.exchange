@@ -55,7 +55,7 @@ export function App() {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3000/orders/buy", {
+      const response = await fetch("https://goldfish-app-wktcj.ondigitalocean.app/orders/buy", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
