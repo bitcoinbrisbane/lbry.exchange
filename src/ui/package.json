@@ -2,6 +2,9 @@
   "name": "my-chakra-app",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",
     "@chakra-ui/react": "^2.8.2",
@@ -23,6 +26,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
-    "vite": "^5.1.4"
+    "vite": "^5.1.4",
+    "vite-tsconfig-paths": "^4.3.1"
   }
 }
