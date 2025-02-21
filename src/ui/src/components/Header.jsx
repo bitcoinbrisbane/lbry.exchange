@@ -20,7 +20,7 @@ export function Header() {
       borderBottom="1px"
       borderColor={borderColor}
       py={4}
-      px={8}
+      px={[4, 8]}
       position="sticky"
       top={0}
       zIndex={10}
@@ -30,16 +30,18 @@ export function Header() {
         mx="auto"
         justify="space-between"
         align="center"
+        direction={['column', 'row']}
+        gap={[4, 0]}
       >
         <Link href="/" _hover={{ textDecoration: 'none' }}>
           <HStack spacing={3}>
             <Image
               src="https://lbry.com/img/logo.svg"
               alt="LBRY"
-              h="32px"
+              h={["24px", "32px"]}
             />
             <Text
-              fontSize="2xl"
+              fontSize={["xl", "2xl"]}
               fontWeight="bold"
               bgGradient="linear(to-r, brand.500, brand.800)"
               bgClip="text"
@@ -49,11 +51,11 @@ export function Header() {
           </HStack>
         </Link>
 
-        <HStack spacing={6}>
+        <HStack spacing={[3, 6]}>
           <Link 
             href="https://lbry.com"
             isExternal
-            fontSize="sm"
+            fontSize={["xs", "sm"]}
             fontWeight="medium"
           >
             LBRY.com
@@ -61,7 +63,7 @@ export function Header() {
           <Link 
             href="https://odysee.com"
             isExternal
-            fontSize="sm"
+            fontSize={["xs", "sm"]}
             fontWeight="medium"
           >
             Odysee
@@ -69,7 +71,7 @@ export function Header() {
           <Link 
             href="https://lbry.tech"
             isExternal
-            fontSize="sm"
+            fontSize={["xs", "sm"]}
             fontWeight="medium"
           >
             Developers

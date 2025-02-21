@@ -1,14 +1,10 @@
-const dotenv = require('dotenv');
 const express = require("express");
 const cors = require('cors');
 const app = express();
 
-
 // Enable CORS for all routes
 app.use(cors({
     origin: 'http://localhost:5173', // Your frontend URL
-    origin: 'https://lbry.exchange', // Your frontend URL
-    origin: 'https://goldfish-app-wktcj.ondigitalocean.app', // Your frontend URL
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -25,7 +21,9 @@ app.get("/", (req, res) => {
 // Create the db connection
 const mongoose = require("mongoose");
 
-mongoose.connect("mongodb+srv://doadmin:2Ua58cXhE6940Te7@mongodb-database-lbry-99b4fc20.mongo.ondigitalocean.com/admin?tls=true&authSource=admin");
+mongoose.connect("mongodb+srv://doadmin:2Ua58cXhE6940Te7@mongodb-database-lbry-99b4fc20.mongo.ondigitalocean.com/admin?tls=true&authSource=admin", {
+
+});
 
 app.get("/orders", async (req, res) => {
     try {
