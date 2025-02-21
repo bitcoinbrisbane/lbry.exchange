@@ -1,7 +1,8 @@
+const dotenv = require('dotenv');
 const express = require("express");
 const cors = require('cors');
 const app = express();
-const dotenv = require('dotenv');
+
 
 // Enable CORS for all routes
 app.use(cors({
@@ -24,10 +25,7 @@ app.get("/", (req, res) => {
 // Create the db connection
 const mongoose = require("mongoose");
 
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-});
+mongoose.connect("mongodb+srv://doadmin:2Ua58cXhE6940Te7@mongodb-database-lbry-99b4fc20.mongo.ondigitalocean.com/admin?tls=true&authSource=admin");
 
 app.get("/orders", async (req, res) => {
     try {
