@@ -31,11 +31,13 @@ const orderSchema = new mongoose.Schema({
     },
     LBC_Address: {
         type: String,
-        required: true,
+        required: function() {
+            return this.type === 'buyLBC'; // Only required for buy orders
+        }
     },
     USDC_Address: {
         type: String,
-        required: false,
+        required: true
     },
     LBC_Requested: {
         type: Number,

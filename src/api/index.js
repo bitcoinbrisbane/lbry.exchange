@@ -21,6 +21,9 @@ app.use(
 // Import the Order model
 const Order = require("./models/order");
 
+const MANAGED_LBC_RECEIVING_ADDRESS = "bJxPoWWAttwnh3WR8fxJPguzeJ4mmk4n8o";
+const MANAGED_USDC_RECEIVING_ADDRESS = "0x0000000000000000000000000000000000000000";
+
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -88,7 +91,7 @@ app.post("/orders/buy", async (req, res) => {
       date: new Date(),
       status: "pending",
       LBC_Address: req.body.LBC_Address,
-      expiry: new Date(Date.now() + 1000 * 600), // 10 minutes
+      expiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
       quantity: req.body.quantity,
       price: currentRate,
       USDC_Address: req.body.USDC_Address,
@@ -110,20 +113,34 @@ app.post("/orders/buy", async (req, res) => {
 
 app.post("/orders/sell", async (req, res) => {
   try {
+    // Validate required fields for sell orders
+    if (!req.body.USDC_Address) {
+      return res.status(400).json({ error: "USDC_Address is required" });
+    }
+    if (!req.body.quantity) {
+      return res.status(400).json({ error: "quantity is required" });
+    }
+
+    const currentRate = getRate();
+
+    // Create order without LBC_Address requirement
     const order = new Order({
       type: "sellLBC",
-      date: new Date(),
-      status: "pending",
-      LBC_Address: req.body.LBC_Address,
-      expiry: new Date(Date.now() + 1000 * 600), // 10 minutes
+      USDC_Address: req.body.USDC_Address,
       quantity: req.body.quantity,
-      price: req.body.price,
-      USDC_Address: await getLbryDepositAddress(),
-      LBC_Requested: req.body.quantity,
+      price: currentRate,
+      status: "pending",
+      expiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
+      date: new Date(),
     });
 
     await order.save();
-    res.json(order);
+
+    // Return order with rate information
+    res.json({
+      ...order.toJSON(),
+      rate: currentRate,
+    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -191,6 +208,20 @@ app.get("/orders/:USDC_Address", async (req, res) => {
       error: "Failed to fetch orders",
     });
   }
+});
+
+// Get managed LBC receiving address
+app.get("/getManagedLBCReceivingAddress", (req, res) => {
+  res.json({
+    address: MANAGED_LBC_RECEIVING_ADDRESS
+  });
+});
+
+// Get managed USDC receiving address
+app.get("/getManagedUSDCReceivingAddress", (req, res) => {
+  res.json({
+    address: MANAGED_USDC_RECEIVING_ADDRESS
+  });
 });
 
 app.listen(3000, () => {

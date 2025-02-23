@@ -13,19 +13,30 @@ import {
   AlertIcon,
   Badge,
   Tooltip,
-  Stat,
-  StatLabel,
-  StatNumber
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  Button,
+  VStack,
+  useDisclosure,
+  Center,
 } from '@chakra-ui/react'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { API_BASE_URL } from '../config/constants'
 import { useWallet } from '../contexts/WalletContext'
+import { QRCodeSVG } from 'qrcode.react'
 
 export function OrderHistory({ refreshTrigger }) {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [managedAddress, setManagedAddress] = useState(null)
+  const { isOpen, onOpen, onClose } = useDisclosure()
   const { address } = useWallet()
   const bgColor = useColorModeValue('white', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.700')
@@ -48,6 +59,21 @@ export function OrderHistory({ refreshTrigger }) {
       setError(error.response?.data?.message || 'Failed to fetch orders')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleOrderClick = async (order) => {
+    setSelectedOrder(order)
+    try {
+      const endpoint = order.type === 'buyLBC' 
+        ? '/getManagedUSDCReceivingAddress'
+        : '/getManagedLBCReceivingAddress'
+      
+      const response = await axios.get(`${API_BASE_URL}${endpoint}`)
+      setManagedAddress(response.data.address)
+      onOpen()
+    } catch (error) {
+      console.error('Failed to fetch managed address:', error)
     }
   }
 
@@ -113,6 +139,7 @@ export function OrderHistory({ refreshTrigger }) {
                 <Th>Status</Th>
                 <Th>LBC Address</Th>
                 <Th>Expiry</Th>
+                <Th>Action</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -132,11 +159,26 @@ export function OrderHistory({ refreshTrigger }) {
                       </Badge>
                     </Td>
                     <Td>
-                      <Tooltip label={order.LBC_Address}>
-                        {order.LBC_Address.slice(0, 6)}...{order.LBC_Address.slice(-4)}
-                      </Tooltip>
+                      {order.LBC_Address ? (
+                        <Tooltip label={order.LBC_Address}>
+                          {`${order.LBC_Address.slice(0, 6)}...${order.LBC_Address.slice(-4)}`}
+                        </Tooltip>
+                      ) : (
+                        <Text color="gray.500">N/A</Text>
+                      )}
                     </Td>
                     <Td>{formatDate(order.expiry)}</Td>
+                    <Td>
+                      {order.status === 'pending' && (
+                        <Button
+                          size="sm"
+                          colorScheme="blue"
+                          onClick={() => handleOrderClick(order)}
+                        >
+                          Pay Now
+                        </Button>
+                      )}
+                    </Td>
                   </Tr>
                 )
               })}
@@ -144,6 +186,38 @@ export function OrderHistory({ refreshTrigger }) {
           </Table>
         </Box>
       )}
+
+      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            {selectedOrder?.type === 'buyLBC' ? 'Pay USDC' : 'Send LBC'}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <VStack spacing={4} align="center">
+              <Text>
+                {selectedOrder?.type === 'buyLBC' 
+                  ? 'Send USDC to this address:'
+                  : 'Send LBC to this address:'}
+              </Text>
+              <Box p={4} bg="gray.100" borderRadius="md">
+                <Text fontSize="sm" wordBreak="break-all">
+                  {managedAddress}
+                </Text>
+              </Box>
+              <Center p={4} bg="white">
+                <QRCodeSVG value={managedAddress || ''} size={200} />
+              </Center>
+              <Text fontSize="sm" color="gray.600">
+                {selectedOrder?.type === 'buyLBC'
+                  ? `Send ${(selectedOrder?.quantity * selectedOrder?.price).toFixed(2)} USDC`
+                  : `Send ${selectedOrder?.quantity.toFixed(2)} LBC`}
+              </Text>
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   )
 } 
