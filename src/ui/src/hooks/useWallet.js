@@ -26,6 +26,12 @@ export function useWallet() {
 		}
 	};
 
+	const disconnectWallet = () => {
+		setAddress(null);
+		setError(null);
+		// Add any additional cleanup needed
+	};
+
 	useEffect(() => {
 		// Check if already connected
 		if (window.ethereum) {
@@ -42,5 +48,6 @@ export function useWallet() {
 		isConnecting,
 		error,
 		connectWallet,
+		disconnectWallet,
 	};
 }

@@ -20,7 +20,7 @@ import {
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { API_BASE_URL } from '../config/constants'
-import { useWallet } from '../hooks/useWallet'
+import { useWallet } from '../contexts/WalletContext'
 
 export function OrderHistory({ refreshTrigger }) {
   const [orders, setOrders] = useState([])

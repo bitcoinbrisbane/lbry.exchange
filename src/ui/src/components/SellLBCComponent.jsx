@@ -17,51 +17,37 @@ import {
   Progress,
   HStack,
   Flex,
-  Switch,
   IconButton,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
-import { useWallet } from "../contexts/WalletContext";
 import { useRate } from "../hooks/useRate";
 import axios from "axios";
 import { API_BASE_URL } from "../config/constants";
 import { RepeatIcon } from "@chakra-ui/icons";
+import { useWallet } from "../contexts/WalletContext";
 
-// Helper function to validate LBC address format
-const isValidLBCAddress = (address) => {
-  // Basic validation: starts with 'b' and is 34 characters
-  const basicFormat = /^b[1-9A-HJ-NP-Za-km-z]{33}$/;
-  return basicFormat.test(address);
-};
-
-export function OrderComponent({ onOrderSubmitted }) {
-  // 1. Define all color mode values first
+export function SellLBCComponent({ onOrderSubmitted }) {
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const quoteBgColor = useColorModeValue("gray.50", "gray.700");
   const supplyBgColor = useColorModeValue("gray.100", "gray.700");
 
-  // 2. Other hooks
   const toast = useToast();
   const { address, isConnecting, error: walletError, connectWallet, disconnectWallet } = useWallet();
   const { rate, loading: rateLoading, error: rateError } = useRate();
 
-  // 3. State hooks
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [quote, setQuote] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isUSDCMode, setIsUSDCMode] = useState(false);
-  const [lbcAddress, setLbcAddress] = useState("");
 
-  // 4. Define helper functions
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // 5. Define effects
   useEffect(() => {
     if (!timeLeft) return;
 
@@ -78,23 +64,20 @@ export function OrderComponent({ onOrderSubmitted }) {
     return () => clearInterval(intervalId);
   }, [timeLeft]);
 
-  // 6. Define handlers
   const handleGetQuote = () => {
     if (!rate || !amount) return;
 
     let lbcAmount, usdcAmount;
     if (isUSDCMode) {
-      // If amount is in USDC, calculate LBC
       usdcAmount = parseFloat(amount);
       lbcAmount = usdcAmount / rate;
     } else {
-      // If amount is in LBC, calculate USDC
       lbcAmount = parseFloat(amount);
       usdcAmount = lbcAmount * rate;
     }
 
     const fee = usdcAmount * 0.01; // 1% fee
-    const total = usdcAmount + fee;
+    const total = usdcAmount - fee; // Subtract fee for selling
 
     setQuote({
       subtotal: usdcAmount.toFixed(2),
@@ -103,7 +86,7 @@ export function OrderComponent({ onOrderSubmitted }) {
       rate: rate,
       amount: lbcAmount.toFixed(2),
     });
-    setTimeLeft(240);
+    setTimeLeft(240); // 4 minutes quote validity
   };
 
   const handleSubmit = async (e) => {
@@ -111,18 +94,7 @@ export function OrderComponent({ onOrderSubmitted }) {
     if (!address) {
       toast({
         title: "Wallet not connected",
-        description: "Please connect your wallet first",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    if (!lbcAddress || !isValidLBCAddress(lbcAddress)) {
-      toast({
-        title: "Invalid LBC Address",
-        description: "Please enter a valid LBC address (starts with 'b' and is 34 characters long)",
+        description: "Please connect your wallet first to receive USDC",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -144,43 +116,34 @@ export function OrderComponent({ onOrderSubmitted }) {
     setLoading(true);
     try {
       const orderData = {
-        LBC_Address: lbcAddress,
-        quantity: parseFloat(quote.amount),
         USDC_Address: address,
+        quantity: parseFloat(quote.amount),
+        price: rate,
       };
 
-      console.log("Submitting order:", orderData);
-
       const response = await axios.post(
-        `${API_BASE_URL}/orders/buy`,
+        `${API_BASE_URL}/orders/sell`,
         orderData
       );
 
-      console.log("Order saved:", response.data);
-
       toast({
         title: "Order submitted",
-        description: `Order created for ${quote.amount} LBC`,
+        description: `Send ${quote.amount} LBC to our address to receive ${quote.total} USDC at ${address}`,
         status: "success",
         duration: 5000,
         isClosable: true,
       });
 
-      // Reset form
       setAmount("");
       setQuote(null);
       setTimeLeft(0);
-      setLbcAddress("");
-
-      // Trigger refresh of order history
       onOrderSubmitted?.();
+
     } catch (error) {
       console.error("Order submission error:", error);
       toast({
         title: "Error",
-        description:
-          error.response?.data?.error ||
-          "Failed to process order. Please try again.",
+        description: error.response?.data?.error || "Failed to process order. Please try again.",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -190,7 +153,6 @@ export function OrderComponent({ onOrderSubmitted }) {
     }
   };
 
-  // 7. Return JSX
   return (
     <Box
       p={6}
@@ -203,14 +165,14 @@ export function OrderComponent({ onOrderSubmitted }) {
       <VStack spacing={4} align="stretch">
         <Flex justify="space-between" align="center">
           <Text fontSize="2xl" fontWeight="bold">
-            Buy LBC
+            Sell LBC
           </Text>
           <Box bg={supplyBgColor} px={3} py={2} borderRadius="md">
             <Text fontSize="sm" color="gray.500">
-              Total Supply
+              Current Rate
             </Text>
             <Text fontSize="md" fontWeight="bold">
-              654.23M LBC
+              1 LBC = ${rate} USDC
             </Text>
           </Box>
         </Flex>
@@ -223,85 +185,71 @@ export function OrderComponent({ onOrderSubmitted }) {
         )}
 
         {!address ? (
-          <Button
-            colorScheme="brand"
-            onClick={connectWallet}
-            isLoading={isConnecting}
-            loadingText="Connecting..."
-          >
-            Connect Wallet
-          </Button>
+          <>
+            <Alert status="info">
+              <AlertIcon />
+              Connect your wallet to specify where you'll receive USDC
+            </Alert>
+            <Button
+              colorScheme="brand"
+              onClick={connectWallet}
+              isLoading={isConnecting}
+              loadingText="Connecting..."
+            >
+              Connect Wallet
+            </Button>
+          </>
         ) : (
           <>
-            <HStack justify="space-between">
-              <Text>
-                Connected: {address.slice(0, 6)}...{address.slice(-4)}
-              </Text>
-              <Button
-                size="sm"
-                colorScheme="red"
-                variant="outline"
-                onClick={disconnectWallet}
-              >
-                Disconnect
-              </Button>
-            </HStack>
+            <Box p={4} bg={quoteBgColor} borderRadius="md">
+              <VStack align="stretch" spacing={2}>
+                <Flex justify="space-between" align="center">
+                  <Text fontWeight="medium">USDC Receiving Address</Text>
+                  <Button
+                    size="sm"
+                    colorScheme="red"
+                    variant="outline"
+                    onClick={disconnectWallet}
+                  >
+                    Disconnect
+                  </Button>
+                </Flex>
+                <Text fontSize="sm">{address}</Text>
+                <Text fontSize="sm" color="gray.500">
+                  You'll receive USDC at this address after sending LBC
+                </Text>
+              </VStack>
+            </Box>
 
             <form onSubmit={handleSubmit}>
               <VStack spacing={4}>
-                <FormControl isRequired isInvalid={lbcAddress && !isValidLBCAddress(lbcAddress)}>
-                  <FormLabel>LBC Receiving Address</FormLabel>
-                  <Input
-                    value={lbcAddress}
-                    onChange={(e) => setLbcAddress(e.target.value)}
-                    placeholder="Enter your LBC address (starts with 'b')"
-                  />
-                  <Text fontSize="sm" color="gray.500" mt={1}>
-                    The address where you'll receive your LBC
-                  </Text>
-                  {lbcAddress && !isValidLBCAddress(lbcAddress) && (
-                    <Text color="red.500" fontSize="sm" mt={1}>
-                      Invalid LBC address format. Must start with 'b' and be 34 characters long.
-                    </Text>
-                  )}
+                <FormControl isRequired>
+                  <FormLabel>
+                    Amount ({isUSDCMode ? "USDC" : "LBC"})
+                  </FormLabel>
+                  <HStack>
+                    <Input
+                      type="number"
+                      value={amount}
+                      onChange={(e) => setAmount(Number(e.target.value))}
+                      placeholder={`Enter ${isUSDCMode ? "USDC" : "LBC"} amount`}
+                      min={isUSDCMode ? 0.01 : 1}
+                      max={isUSDCMode ? 10000 : 1000000}
+                      step={isUSDCMode ? 0.01 : 1}
+                      isDisabled={rateLoading}
+                    />
+                    <IconButton
+                      icon={<RepeatIcon />}
+                      onClick={() => {
+                        setIsUSDCMode(!isUSDCMode);
+                        setAmount("");
+                        setQuote(null);
+                      }}
+                      aria-label="Toggle currency"
+                      title="Switch between LBC and USDC"
+                    />
+                  </HStack>
                 </FormControl>
-
-                <HStack width="full" justify="space-between" align="center">
-                  <FormControl isRequired>
-                    <FormLabel>
-                      Amount ({isUSDCMode ? "USDC" : "LBC"})
-                    </FormLabel>
-                    <HStack>
-                      <Input
-                        type="number"
-                        value={amount}
-                        onChange={(e) => setAmount(Number(e.target.value))}
-                        placeholder={`Enter ${
-                          isUSDCMode ? "USDC" : "LBC"
-                        } amount`}
-                        min={isUSDCMode ? 0.01 : 1}
-                        max={isUSDCMode ? 10000 : 1000000} // Increased maximum for USDC to 10,000
-                        step={isUSDCMode ? 0.01 : 1}
-                        isDisabled={rateLoading}
-                      />
-                      <IconButton
-                        icon={<RepeatIcon />}
-                        onClick={() => {
-                          setIsUSDCMode(!isUSDCMode);
-                          setAmount("");
-                          setQuote(null);
-                        }}
-                        aria-label="Toggle currency"
-                        title="Switch between LBC and USDC"
-                      />
-                    </HStack>
-                    <Text fontSize="sm" color="gray.500" mt={1}>
-                      {isUSDCMode
-                        ? "Min: $0.01 USDC, Max: $10,000 USDC"
-                        : "Min: 1 LBC, Max: 1,000,000 LBC"}
-                    </Text>
-                  </FormControl>
-                </HStack>
 
                 <Button
                   colorScheme="blue"
@@ -328,21 +276,15 @@ export function OrderComponent({ onOrderSubmitted }) {
                       </Box>
 
                       <Stat>
-                        <StatLabel>Exchange Rate</StatLabel>
-                        <StatNumber>1 LBC = ${rate} USDC</StatNumber>
+                        <StatLabel>You Will Send</StatLabel>
+                        <StatNumber>{quote.amount} LBC</StatNumber>
                       </Stat>
 
                       <Divider my={2} />
 
                       <Stat>
-                        <StatLabel>
-                          {isUSDCMode ? "You Will Receive" : "You Will Pay"}
-                        </StatLabel>
-                        <StatNumber>
-                          {isUSDCMode
-                            ? `${quote.amount} LBC`
-                            : `$${quote.subtotal} USDC`}
-                        </StatNumber>
+                        <StatLabel>You Will Receive</StatLabel>
+                        <StatNumber>${quote.subtotal} USDC</StatNumber>
                       </Stat>
 
                       <Stat>
@@ -353,11 +295,8 @@ export function OrderComponent({ onOrderSubmitted }) {
                       <Divider my={2} />
 
                       <Stat>
-                        <StatLabel>Total USDC Required</StatLabel>
+                        <StatLabel>Total USDC You'll Receive</StatLabel>
                         <StatNumber>${quote.total}</StatNumber>
-                        <Text fontSize="sm" color="gray.500">
-                          This amount will be deducted from your wallet
-                        </Text>
                       </Stat>
                     </VStack>
                   </Box>
@@ -372,7 +311,7 @@ export function OrderComponent({ onOrderSubmitted }) {
                   loadingText="Processing..."
                   isDisabled={!quote || timeLeft === 0 || rateLoading}
                 >
-                  Purchase Now
+                  Sell Now
                 </Button>
               </VStack>
             </form>
@@ -381,4 +320,4 @@ export function OrderComponent({ onOrderSubmitted }) {
       </VStack>
     </Box>
   );
-}
+} 

@@ -30,6 +30,8 @@ app.get("/", (req, res) => {
 // Create the db connection
 const mongoose = require("mongoose");
 
+console.log("MONGODB_URI", process.env.MONGODB_URI);
+
 mongoose.connect(
   process.env.MONGODB_URI || "mongodb://localhost:27017/lbry-exchange",
   {}
@@ -37,7 +39,7 @@ mongoose.connect(
 
 app.get("/orders", async (req, res) => {
   try {
-    const orders = await Order.find({ status: "pending" })
+    const orders = await Order.find()
       .sort({ date: -1 })
       .limit(50);
     res.json(orders);

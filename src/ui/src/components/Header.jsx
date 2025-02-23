@@ -53,6 +53,13 @@ export function Header() {
 
         <HStack spacing={[3, 6]}>
           <Link 
+            href="/sell"
+            fontSize={["xs", "sm"]}
+            fontWeight="medium"
+          >
+            Sell LBC
+          </Link>
+          <Link 
             href="https://lbry.com"
             isExternal
             fontSize={["xs", "sm"]}

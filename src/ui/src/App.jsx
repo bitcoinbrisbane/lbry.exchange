@@ -1,88 +1,26 @@
 "use client";
 
 import { Box } from "@chakra-ui/react";
-import { useForm } from "react-hook-form";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState } from "react";
 import { Home } from "./pages/Home";
 import { Header } from "./components/Header";
 import { API_BASE_URL } from "./config/constants";
-
-// Create a Field component since we don't have access to @/components/ui/field
-const Field = ({ label, children, invalid, errorText, required }) => (
-	<Box>
-		<Box as="label" display="block" mb="2" fontWeight="medium">
-			{label}
-			{required && (
-				<Box as="span" color="red.500">
-					*
-				</Box>
-			)}
-		</Box>
-		{children}
-		{invalid && errorText && (
-			<Box color="red.500" fontSize="sm" mt="1">
-				{errorText}
-			</Box>
-		)}
-	</Box>
-);
+import { Sell } from "./pages/Sell";
 
 export function App() {
-	const [loading, setLoading] = useState(false);
-	const [alert, setAlert] = useState(null);
-
-	const {
-		register,
-		handleSubmit,
-		formState: { errors },
-	} = useForm({
-		defaultValues: {
-			lbcAddress: "",
-			quantity: "",
-		},
-	});
-
-	const onSubmit = async (data) => {
-		setLoading(true);
-		try {
-			const response = await fetch(`${API_BASE_URL}/orders/buy`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					LBC_Address: data.lbcAddress,
-					quantity: Number(data.quantity),
-				}),
-			});
-
-			const responseData = await response.json();
-
-			if (response.ok) {
-				setAlert({
-					status: "success",
-					message: `Order created. You need to send ${responseData.usdcNeeded.toFixed(2)} USDC`,
-				});
-			} else {
-				throw new Error(responseData.error);
-			}
-		} catch (error) {
-			setAlert({
-				status: "error",
-				message: error.message,
-			});
-		} finally {
-			setLoading(false);
-		}
-	};
-
 	return (
-		<Box minH="100vh">
-			<Header />
-			<Box as="main" py={8}>
-				<Home />
+		<Router>
+			<Box minH="100vh">
+				<Header />
+				<Box as="main" py={8}>
+					<Routes>
+						<Route path="/" element={<Home />} />
+						<Route path="/sell" element={<Sell />} />
+					</Routes>
+				</Box>
 			</Box>
-		</Box>
+		</Router>
 	);
 }
 
