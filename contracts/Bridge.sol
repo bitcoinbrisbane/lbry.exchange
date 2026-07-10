@@ -1,66 +1,131 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Token} from "./Token.sol";
 
+/// @title LBRY Bridge
+/// @notice Custodial 1:1 bridge between native LBC (LBRY chain) and wLBC (this chain).
+///
+///         Wrap  (LBC -> wLBC): a user deposits native LBC to the custodial LBRY
+///         address off-chain. A trusted signer (the owner) verifies the deposit
+///         and produces a signature; anyone can relay it here to mint wLBC 1:1.
+///         `processed[lbcTxid]` makes each LBC deposit redeemable exactly once,
+///         so the mint is idempotent and replay-safe on-chain — no database.
+///
+///         Unwrap (wLBC -> LBC): a user burns wLBC here and names the LBRY
+///         address to receive native LBC. The burn is recorded on-chain via the
+///         `Unwrap` event; an off-chain worker reads it (by the emitting tx) and
+///         broadcasts the native LBC payout.
+///
+/// @dev Trust model (MVP): a single owner key is the mint authority and the
+///      off-chain custodian. This is fully custodial and trusted. The authority
+///      is a distinct `signer` slot (not raw `owner()`) so it can later move to a
+///      multisig/threshold signer without changing this interface.
 contract Bridge is Ownable {
-    using SafeERC20 for IERC20;
-    mapping(address => bool) public stableCoins;
-    uint256 private nextNonce;
-    address private immutable self;
+    using ECDSA for bytes32;
+    using MessageHashUtils for bytes32;
 
-    struct Order {
-        uint256 quantity; // LBC quantity to send
-        address token;
-        string receiver;
+    /// @notice The wLBC token this bridge mints and burns.
+    Token public immutable token;
+
+    /// @notice Key authorised to sign wrap approvals. Starts as the deployer.
+    address public signer;
+
+    /// @notice LBC deposit txids that have already been minted. The on-chain ledger.
+    mapping(bytes32 => bool) public processed;
+
+    /// @notice Monotonic id for unwrap requests, so each burn is uniquely referable.
+    uint256 public unwrapCount;
+
+    event SignerUpdated(address indexed previousSigner, address indexed newSigner);
+
+    /// @param to        recipient of the minted wLBC
+    /// @param amount    wLBC minted (1:1 with deposited LBC, 8 decimals)
+    /// @param lbcTxid   the native LBC deposit transaction id that funded this mint
+    event Wrapped(address indexed to, uint256 amount, bytes32 indexed lbcTxid);
+
+    /// @param id           sequential unwrap id
+    /// @param from         address that burned wLBC
+    /// @param amount       wLBC burned (native LBC to be paid out 1:1)
+    /// @param lbcAddress   destination LBRY address for the native LBC payout
+    event Unwrap(uint256 indexed id, address indexed from, uint256 amount, string lbcAddress);
+
+    error AlreadyProcessed(bytes32 lbcTxid);
+    error InvalidSignature();
+    error ZeroAmount();
+    error ZeroAddress();
+    error EmptyLbcAddress();
+
+    constructor(address _token) Ownable(msg.sender) {
+        if (_token == address(0)) revert ZeroAddress();
+        token = Token(_token);
+        signer = msg.sender;
     }
 
-    mapping(uint256 => Order) public orders;
-    mapping(bytes32 => bool) public withdrawals;
-
-    constructor() {
-        // This is a placeholder
-        self = address(this);
-        stableCoins.push(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
-        stableCoins.push(0xdAC17F958D2ee523a2206206994597C13D831ec7);
-        stableCoins.push(0x6B175474E89094C44Da98b954EedeAC495271d0F);
+    /// @notice Rotate the wrap-approval signer (mint authority).
+    function setSigner(address newSigner) external onlyOwner {
+        if (newSigner == address(0)) revert ZeroAddress();
+        emit SignerUpdated(signer, newSigner);
+        signer = newSigner;
     }
 
-    function buy(uint256 amount, uint256 rate, address token, string calldata receiver, bytes signature) external returns (uint256 nonce) {
-        require(stableCoins[token], "buy: invalid token");
-        require(amount > 0, "buy: invalid amount");
-        require(rate > 0, "buy: invalid rate");
-
-        bytes32 messageHash = keccak256(abi.encodePacked(amount, rate, receiver);
-        address signer = recoverSignerAddress(getEthSignedMessageHash(messageHash), signature);
-
-        require(signer == owner(), "buy: invalid signature");
-
-        IERC20(token).safeTransferFrom(msg.sender, self, amount * rate);
-
-        Order storage order = new Order(amount * rate, token, receiver);
-        orders[nextNonce] = order;
-
-        // This is a placeholder
-        nonce = nextNonce;
-        nextNonce++;
+    /// @notice The exact message a `signer` must sign to authorise a wrap.
+    /// @dev Binds the mint to this specific chain and this specific bridge so a
+    ///      signature can't be replayed on another deployment. Exposed for the
+    ///      off-chain signer/relayer to reproduce.
+    function wrapMessageHash(
+        address to,
+        uint256 amount,
+        bytes32 lbcTxid
+    ) public view returns (bytes32) {
+        return keccak256(
+            abi.encodePacked(block.chainid, address(this), to, amount, lbcTxid)
+        );
     }
 
-    function withdraw(address recipent, uint256 amount, bytes32 txId, bytes signature) external {
-        require(amount > 0, "withdraw: invalid quantity");
-        require(!withdarwals[txId], "withdraw: already processed");
+    /// @notice Mint wLBC 1:1 against a verified native-LBC deposit.
+    /// @dev Permissionless to call — security comes from the signature and the
+    ///      `processed` guard, so anyone (typically the user or a relayer) can
+    ///      submit a valid approval. Reverts if `lbcTxid` was already redeemed.
+    /// @param to         recipient of the wLBC
+    /// @param amount     amount to mint (must equal the deposited LBC, 8 decimals)
+    /// @param lbcTxid    the native LBC deposit txid backing this mint
+    /// @param signature  `signer`'s signature over `wrapMessageHash(...)`
+    function wrap(
+        address to,
+        uint256 amount,
+        bytes32 lbcTxid,
+        bytes calldata signature
+    ) external {
+        if (to == address(0)) revert ZeroAddress();
+        if (amount == 0) revert ZeroAmount();
+        if (processed[lbcTxid]) revert AlreadyProcessed(lbcTxid);
 
-        bytes32 messageHash = keccak256(abi.encodePacked(recipent, amount, txId));
-        address signer = recoverSignerAddress(getEthSignedMessageHash(messageHash), signature);
+        bytes32 digest = wrapMessageHash(to, amount, lbcTxid).toEthSignedMessageHash();
+        if (digest.recover(signature) != signer) revert InvalidSignature();
 
-        require(signer == owner(), "withdraw: invalid signature");
+        processed[lbcTxid] = true;
+        token.mint(to, amount);
 
-        withdarwals[txId] = true;
-        IERC20(token).safeTransfer(receiver, amount);
+        emit Wrapped(to, amount, lbcTxid);
     }
 
-    event Bought(address indexed sender, uint256 quantity, address token, uint256 nonce);
+    /// @notice Burn wLBC to redeem native LBC on the LBRY chain.
+    /// @dev Records the request on-chain via `Unwrap`; the off-chain custodian
+    ///      watches for it (looked up by this tx's hash) and pays out native LBC.
+    ///      No signature needed — burning the caller's own balance is the auth.
+    /// @param amount      amount of wLBC to burn (native LBC paid out 1:1)
+    /// @param lbcAddress  destination LBRY address for the payout
+    function unwrap(uint256 amount, string calldata lbcAddress) external {
+        if (amount == 0) revert ZeroAmount();
+        if (bytes(lbcAddress).length == 0) revert EmptyLbcAddress();
+
+        token.burn(msg.sender, amount);
+
+        uint256 id = unwrapCount++;
+        emit Unwrap(id, msg.sender, amount, lbcAddress);
+    }
 }
