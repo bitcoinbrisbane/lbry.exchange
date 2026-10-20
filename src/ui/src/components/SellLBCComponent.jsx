@@ -231,7 +231,7 @@ export function SellLBCComponent({ onOrderSubmitted }) {
                     <Input
                       type="number"
                       value={amount}
-                      onChange={(e) => setAmount(Number(e.target.value))}
+                      onChange={(e) => setAmount(e.target.value)}
                       placeholder={`Enter ${isUSDCMode ? "USDC" : "LBC"} amount`}
                       min={isUSDCMode ? 0.01 : 1}
                       max={isUSDCMode ? 10000 : 1000000}

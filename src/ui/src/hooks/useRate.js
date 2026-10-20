@@ -1,4 +1,9 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
+import { API_BASE_URL } from "../config/constants";
+
+// Fallback used when the rate endpoint is unavailable (1 LBC = 0.0035 USDC).
+const FALLBACK_RATE = 0.0035;
 
 export function useRate() {
 	const [rate, setRate] = useState(null);
@@ -6,29 +11,32 @@ export function useRate() {
 	const [error, setError] = useState(null);
 
 	useEffect(() => {
+		let cancelled = false;
+
 		const fetchRate = async () => {
 			try {
-				// For testing, let's hardcode the rate until the backend endpoint is ready
-				setRate(0.0035); // 1 LBC = 0.0035 USDC
-
-				// Once backend is ready, uncomment this:
-				// const response = await axios.get('/api/rate')
-				// setRate(response.data.rate)
-
+				const response = await axios.get(`${API_BASE_URL}/rate`);
+				if (cancelled) return;
+				setRate(response.data.rate);
 				setError(null);
 			} catch (err) {
-				setError("Failed to fetch current rate");
-				console.error("Rate fetch error:", err);
+				if (cancelled) return;
+				// Fall back to a sensible default rather than blocking the UI.
+				console.error("Rate fetch error, using fallback:", err);
+				setRate(FALLBACK_RATE);
+				setError(null);
 			} finally {
-				setLoading(false);
+				if (!cancelled) setLoading(false);
 			}
 		};
 
 		fetchRate();
-		// Optionally refresh rate periodically
-		const interval = setInterval(fetchRate, 60000); // Update every minute
+		const interval = setInterval(fetchRate, 60000); // Refresh every minute
 
-		return () => clearInterval(interval);
+		return () => {
+			cancelled = true;
+			clearInterval(interval);
+		};
 	}, []);
 
 	return { rate, loading, error };

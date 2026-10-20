@@ -7,6 +7,7 @@ import {
   HStack,
   useColorModeValue
 } from '@chakra-ui/react'
+import { Link as RouterLink } from 'react-router-dom'
 
 
 export function Header() {
@@ -33,7 +34,7 @@ export function Header() {
         direction={['column', 'row']}
         gap={[4, 0]}
       >
-        <Link href="/" _hover={{ textDecoration: 'none' }}>
+        <Link as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
           <HStack spacing={3}>
             <Image
               src="https://lbry.com/img/logo.svg"
@@ -52,8 +53,9 @@ export function Header() {
         </Link>
 
         <HStack spacing={[3, 6]}>
-          <Link 
-            href="/sell"
+          <Link
+            as={RouterLink}
+            to="/sell"
             fontSize={["xs", "sm"]}
             fontWeight="medium"
           >

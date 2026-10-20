@@ -275,7 +275,7 @@ export function OrderComponent({ onOrderSubmitted }) {
                       <Input
                         type="number"
                         value={amount}
-                        onChange={(e) => setAmount(Number(e.target.value))}
+                        onChange={(e) => setAmount(e.target.value)}
                         placeholder={`Enter ${
                           isUSDCMode ? "USDC" : "LBC"
                         } amount`}

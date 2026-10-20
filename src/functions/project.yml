@@ -1,0 +1,66 @@
+# DigitalOcean Functions project spec for the LBRY Bridge backend.
+#
+# Deploy with the doctl serverless plugin from this directory:
+#   doctl serverless deploy .
+#
+# Each function is web-accessible (web: true) and returns a raw JSON response.
+# Secrets are read from the environment; set them per-function below via
+# ${VAR} interpolation from your shell / .env (see .env.example) or in the DO
+# dashboard. The signer key is a secret and must never be committed.
+#
+# Routes (with the default /api/v1/web/bridge/... prefix DO assigns):
+#   POST  .../bridge/wrap     { lbcTxid, ethAddress }
+#   POST  .../bridge/unwrap   { burnTxid }
+#   GET   .../bridge/status   ?lbcTxid= | ?burnTxid=
+#   GET   .../bridge/config
+
+environment:
+  ETH_RPC_URL: ${ETH_RPC_URL}
+  BRIDGE_ADDRESS: ${BRIDGE_ADDRESS}
+  TOKEN_ADDRESS: ${TOKEN_ADDRESS}
+  CHAIN_ID: ${CHAIN_ID}
+  MANAGED_LBC_ADDRESS: ${MANAGED_LBC_ADDRESS}
+  LBC_MIN_CONFIRMATIONS: ${LBC_MIN_CONFIRMATIONS}
+
+packages:
+  - name: bridge
+    shared: false
+    environment: {}
+    functions:
+      - name: wrap
+        binary: false
+        main: main
+        runtime: "nodejs:18"
+        web: true
+        limits:
+          timeout: 15000
+          memory: 256
+        environment:
+          SIGNER_PRIVATE_KEY: ${SIGNER_PRIVATE_KEY}
+
+      - name: unwrap
+        binary: false
+        main: main
+        runtime: "nodejs:18"
+        web: true
+        limits:
+          timeout: 15000
+          memory: 256
+
+      - name: status
+        binary: false
+        main: main
+        runtime: "nodejs:18"
+        web: true
+        limits:
+          timeout: 10000
+          memory: 256
+
+      - name: config
+        binary: false
+        main: main
+        runtime: "nodejs:18"
+        web: true
+        limits:
+          timeout: 5000
+          memory: 128
