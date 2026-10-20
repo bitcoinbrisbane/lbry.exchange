@@ -55,11 +55,35 @@ export function Header() {
         <HStack spacing={[3, 6]}>
           <Link
             as={RouterLink}
+            to="/"
+            fontSize={["xs", "sm"]}
+            fontWeight="medium"
+          >
+            Buy LBC
+          </Link>
+          <Link
+            as={RouterLink}
             to="/sell"
             fontSize={["xs", "sm"]}
             fontWeight="medium"
           >
             Sell LBC
+          </Link>
+          <Link
+            as={RouterLink}
+            to="/wrap"
+            fontSize={["xs", "sm"]}
+            fontWeight="medium"
+          >
+            Wrap
+          </Link>
+          <Link
+            as={RouterLink}
+            to="/unwrap"
+            fontSize={["xs", "sm"]}
+            fontWeight="medium"
+          >
+            Unwrap
           </Link>
           <Link 
             href="https://lbry.com"

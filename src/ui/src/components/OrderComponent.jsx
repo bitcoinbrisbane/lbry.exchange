@@ -23,8 +23,9 @@ import {
 import { useState, useEffect } from "react";
 import { useWallet } from "../contexts/WalletContext";
 import { useRate } from "../hooks/useRate";
+import { useTotalSupply } from "../hooks/useTotalSupply";
 import axios from "axios";
-import { API_BASE_URL } from "../config/constants";
+import { API_BASE_URL, MAX_LBC } from "../config/constants";
 import { RepeatIcon } from "@chakra-ui/icons";
 
 // Helper function to validate LBC address format
@@ -45,6 +46,14 @@ export function OrderComponent({ onOrderSubmitted }) {
   const toast = useToast();
   const { address, isConnecting, error: walletError, connectWallet, disconnectWallet } = useWallet();
   const { rate, loading: rateLoading, error: rateError } = useRate();
+  const { totalSupply, loading: supplyLoading, error: supplyError } = useTotalSupply();
+
+  // Compact display, e.g. 654,230,000 -> "654.23M"
+  const formatSupply = (value) =>
+    new Intl.NumberFormat("en-US", {
+      notation: "compact",
+      maximumFractionDigits: 2,
+    }).format(value);
 
   // 3. State hooks
   const [amount, setAmount] = useState("");
@@ -91,6 +100,17 @@ export function OrderComponent({ onOrderSubmitted }) {
       // If amount is in LBC, calculate USDC
       lbcAmount = parseFloat(amount);
       usdcAmount = lbcAmount * rate;
+    }
+
+    if (lbcAmount > MAX_LBC) {
+      toast({
+        title: "Amount too large",
+        description: `Maximum order is ${MAX_LBC.toLocaleString()} LBC.`,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
     }
 
     const fee = usdcAmount * 0.01; // 1% fee
@@ -203,14 +223,18 @@ export function OrderComponent({ onOrderSubmitted }) {
       <VStack spacing={4} align="stretch">
         <Flex justify="space-between" align="center">
           <Text fontSize="2xl" fontWeight="bold">
-            Buy LBC
+            Buy LBC with USDT/USDC on Ethereum
           </Text>
           <Box bg={supplyBgColor} px={3} py={2} borderRadius="md">
             <Text fontSize="sm" color="gray.500">
               Total Supply
             </Text>
             <Text fontSize="md" fontWeight="bold">
-              654.23M LBC
+              {supplyLoading
+                ? "…"
+                : supplyError || totalSupply == null
+                ? "—"
+                : `${formatSupply(totalSupply)} LBC`}
             </Text>
           </Box>
         </Flex>
@@ -280,7 +304,7 @@ export function OrderComponent({ onOrderSubmitted }) {
                           isUSDCMode ? "USDC" : "LBC"
                         } amount`}
                         min={isUSDCMode ? 0.01 : 1}
-                        max={isUSDCMode ? 10000 : 1000000} // Increased maximum for USDC to 10,000
+                        max={isUSDCMode ? (rate ? MAX_LBC * rate : undefined) : MAX_LBC}
                         step={isUSDCMode ? 0.01 : 1}
                         isDisabled={rateLoading}
                       />
@@ -297,8 +321,8 @@ export function OrderComponent({ onOrderSubmitted }) {
                     </HStack>
                     <Text fontSize="sm" color="gray.500" mt={1}>
                       {isUSDCMode
-                        ? "Min: $0.01 USDC, Max: $10,000 USDC"
-                        : "Min: 1 LBC, Max: 1,000,000 LBC"}
+                        ? `Min: $0.01 USDC, Max: ${MAX_LBC.toLocaleString()} LBC worth`
+                        : `Min: 1 LBC, Max: ${MAX_LBC.toLocaleString()} LBC`}
                     </Text>
                   </FormControl>
                 </HStack>
@@ -314,7 +338,7 @@ export function OrderComponent({ onOrderSubmitted }) {
                 </Button>
 
                 {quote && timeLeft > 0 && (
-                  <Box p={4} bg={quoteBgColor} borderRadius="md">
+                  <Box p={4} bg={quoteBgColor} borderRadius="md" w="full">
                     <VStack spacing={2} align="stretch">
                       <Box mb={2}>
                         <Text fontSize="sm" mb={1}>
