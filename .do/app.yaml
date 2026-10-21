@@ -29,7 +29,7 @@ static_sites:
     envs:
       - key: VITE_BRIDGE_API_URL
         scope: BUILD_TIME
-        value: ""
+        value: https://faas-syd1-c274eac6.doserverless.co/api/v1/web/fn-c50fc3e2-222d-4f13-ab7e-6eca05bd715d/bridge
       - key: VITE_WLBC_ADDRESS
         scope: BUILD_TIME
         value: 0xB0F2C4f8b7c0f088f7844947EcBf1220bFCa08C1

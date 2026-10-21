@@ -6,7 +6,7 @@
 #
 # Each function is web-accessible (web: true) and returns JSON. Secrets are
 # read from the environment: export them (or `set -a; source .env`) before
-# deploying so the ${VAR} references below are filled in, or set them in the
+# deploying so the dollar-brace references below are filled in, or set them in the
 # DigitalOcean dashboard. Never commit real values.
 #
 # Routes (with the default /api/v1/web/bridge/... prefix DO assigns):
@@ -17,17 +17,18 @@
 #   GET   .../bridge/config
 
 environment:
-  ETH_RPC_URL: ${ETH_RPC_URL}
-  CHAIN_ID: ${CHAIN_ID}
-  BRIDGE_ADDRESS: ${BRIDGE_ADDRESS}
-  TOKEN_ADDRESS: ${TOKEN_ADDRESS}
-  ETH_MIN_CONFIRMATIONS: ${ETH_MIN_CONFIRMATIONS}
-  LBC_NETWORK: ${LBC_NETWORK}
-  LBC_HUBS: ${LBC_HUBS}
-  LBC_MIN_CONFIRMATIONS: ${LBC_MIN_CONFIRMATIONS}
-  LBC_FEE_PER_BYTE: ${LBC_FEE_PER_BYTE}
+  ETH_RPC_URL: "${ETH_RPC_URL}"
+  CHAIN_ID: "${CHAIN_ID}"
+  BRIDGE_ADDRESS: "${BRIDGE_ADDRESS}"
+  TOKEN_ADDRESS: "${TOKEN_ADDRESS}"
+  ETH_MIN_CONFIRMATIONS: "${ETH_MIN_CONFIRMATIONS}"
+  LBC_NETWORK: "${LBC_NETWORK}"
+  # LBC_HUBS (host:port,...) is optional: unset, the public Odysee hubs are used.
+  # doctl refuses empty substitutions, so add it here only when you set one.
+  LBC_MIN_CONFIRMATIONS: "${LBC_MIN_CONFIRMATIONS}"
+  LBC_FEE_PER_BYTE: "${LBC_FEE_PER_BYTE}"
   # BIP39 phrase every deposit address and the payout treasury derive from.
-  CUSTODY_MNEMONIC: ${CUSTODY_MNEMONIC}
+  CUSTODY_MNEMONIC: "${CUSTODY_MNEMONIC}"
 
 packages:
   - name: bridge
@@ -44,7 +45,7 @@ packages:
           memory: 256
         environment:
           # Ethereum key matching Bridge.signer(); only the wrap function signs.
-          SIGNER_PRIVATE_KEY: ${SIGNER_PRIVATE_KEY}
+          SIGNER_PRIVATE_KEY: "${SIGNER_PRIVATE_KEY}"
 
       - name: unwrap
         binary: false

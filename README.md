@@ -73,6 +73,9 @@ deposits   m/44'/140'/0'/2/c0/c1/c2/c3/c4/c5    c0..c5 = the user's 160-bit Ethe
 treasury   m/44'/140'/1'/0/0                     pays out unwraps
 ```
 
+Production treasury (mainnet LBC): `bU3qvW4ecNWnnjpZffgGZKBYWaUfGwYP3n`. Payout
+fees come from here, so it needs a float.
+
 Because a deposit address is a function of the recipient, LBC sent to it can
 only ever be minted to that recipient. Handing out an address needs no
 authentication: anyone requesting X's address can only help X.
@@ -186,8 +189,8 @@ Next
 - [ ] Unwrap page: burn from the wallet, then hand the burn hash to the functions
 - [x] Token and Bridge deployed to Ethereum mainnet and verified on Etherscan;
       front end on App Platform
-- [ ] Deploy the functions to DigitalOcean; end-to-end test with a small LBC
-      deposit
+- [x] Functions deployed to DigitalOcean with a production custody seed
+- [ ] End-to-end test with a small LBC deposit against the live site
 - [ ] Sweep function: enumerate deposit addresses from `Wrapped` events and
       consolidate into the treasury
 - [ ] Proof of 1:1: publish the deposits and treasury xpubs, `reserves`
@@ -223,7 +226,7 @@ npx hardhat ignition deploy ignition/modules/Bridge.js --network mainnet --verif
 | What | Where |
 | --- | --- |
 | Front end | DigitalOcean App Platform, static site from `src/ui`, spec in `.do/app.yaml`, domain **lbc.exchange** (and `www`), Sydney |
-| Functions | DigitalOcean Functions, `src/functions/project.yml` |
+| Functions | DigitalOcean Functions, namespace `lbc-exchange` (syd1), `src/functions/project.yml`. Base URL `https://faas-syd1-c274eac6.doserverless.co/api/v1/web/fn-c50fc3e2-222d-4f13-ab7e-6eca05bd715d/bridge` |
 | DNS | `lbc.exchange` zone in DigitalOcean DNS (registrar name servers → `ns1`, `ns2`, `ns3.digitalocean.com`). Apex `A` → App Platform ingress `162.159.140.98`, `172.66.0.96`; `www` `CNAME` → `lbc-exchange-4geaw.ondigitalocean.app` |
 
 ### Deployments
