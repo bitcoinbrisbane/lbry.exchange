@@ -129,6 +129,45 @@ contract is separate from `owner` so it can move to a multisig or threshold
 signer later without changing the interface. The bridge should hold only what
 the operator is prepared to be liable for.
 
+### Proving 1:1
+
+The liability side is already public: `Token.totalSupply()`. What needs proving
+is the asset side, that custodied LBC covers it, and that anyone can check it
+without trusting the operator.
+
+**Open the books.** Publish the two account extended public keys:
+
+```
+deposits xpub   m/44'/140'/0'    every deposit address is /2/c0..c5 below it
+treasury xpub   m/44'/140'/1'    the treasury is /0/0 below it
+```
+
+The deposit path is non-hardened below the account, so from the deposits xpub
+and the bridge's `Wrapped` events (each names the recipient) anyone derives the
+full set of deposit addresses and sums their balances on any LBRY hub. Private
+keys stay private; only the address set becomes computable. For a transparent
+bridge that is the point.
+
+**Commit snapshots.** On a schedule (and on demand) the functions build a Merkle
+tree over the reserves at an LBC block height:
+
+```
+leaf   = keccak256(lbcAddress ‖ balanceDewies ‖ lbcHeight)        sorted by address
+root   = standard binary tree, odd node duplicated
+```
+
+and post `(root, totalReserves, totalSupply, lbcHeight, ethBlock)` to a small
+`Reserves` attestation contract. A `reserves` endpoint serves the leaves,
+totals and a proof for any address, and the UI shows the ratio. A verifier with
+the xpubs recomputes the tree from scratch; a light client checks that the
+treasury or their own deposit address is in the committed set.
+
+**What 1:1 means here.** At any moment `reserves ≥ supply` should hold:
+confirmed-but-unminted deposits and burned-but-unpaid unwraps both push reserves
+above supply, never below. The one thing that erodes it is payout fees, which
+come from the treasury, so the operator must top up fees and the attestation
+makes any shortfall visible.
+
 ## Plan
 
 Done
@@ -149,12 +188,14 @@ Next
       App Platform; end-to-end test with testnet LBC
 - [ ] Sweep function: enumerate deposit addresses from `Wrapped` events and
       consolidate into the treasury
-- [ ] Alerting on treasury balance and on unwraps left unpaid
+- [ ] Proof of 1:1: publish the deposits and treasury xpubs, `reserves`
+      endpoint building the Merkle tree over address balances, `Reserves`
+      attestation contract, reserves page in the UI
+- [ ] Alerting on treasury balance, unpaid unwraps and `reserves < supply`
 
 Later
 
 - [ ] Move `signer` to a multisig or threshold scheme
-- [ ] Publish proof of reserves: treasury plus unswept deposits versus wLBC supply
 - [ ] Decide the future of `Sale.sol` (USDC-priced LBC sales), which is
       independent of the bridge
 
