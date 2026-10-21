@@ -2,7 +2,7 @@
 // Hardhat chain, then prices it against the live target network.
 //
 //   DRY_RUN=1 npx hardhat run scripts/dry-run-deploy.js
-//   TARGET_RPC_URL=https://sepolia.base.org (default) picks the chain to price against.
+//   TARGET_RPC_URL (default: Ethereum mainnet via publicnode) picks the chain to price against.
 const { ethers } = require("hardhat");
 
 async function main() {
@@ -29,7 +29,7 @@ async function main() {
   };
 
   const totalGas = steps.reduce((s, x) => s + x.gasUsed, 0n);
-  const targetUrl = process.env.TARGET_RPC_URL || "https://sepolia.base.org";
+  const targetUrl = process.env.TARGET_RPC_URL || process.env.MAINNET_RPC_URL || "https://ethereum-rpc.publicnode.com";
   const target = new ethers.JsonRpcProvider(targetUrl);
   const [net, fee, balance] = await Promise.all([target.getNetwork(), target.getFeeData(), target.getBalance(deployer.address)]);
   const gasPrice = fee.maxFeePerGas ?? fee.gasPrice;

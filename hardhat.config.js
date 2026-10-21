@@ -29,7 +29,7 @@ module.exports = {
         : {}),
     },
     mainnet: {
-      url: MAINNET_RPC_URL || "",
+      url: MAINNET_RPC_URL || "https://ethereum-rpc.publicnode.com",
       chainId: 1,
       accounts,
     },

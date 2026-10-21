@@ -1,7 +1,7 @@
 # lbry.exchange
 
 A custodial 1:1 bridge between native **LBC** (LBRY Credits) and **wLBC**, an
-ERC-20 on Ethereum / Base. Deposit LBC, mint wLBC. Burn wLBC, get LBC back.
+ERC-20 on Ethereum mainnet. Deposit LBC, mint wLBC. Burn wLBC, get LBC back.
 
 ```
 contracts/      Token.sol (wLBC), Bridge.sol (mint on verified deposit, burn to unwrap), Sale.sol
@@ -21,7 +21,7 @@ test/           Hardhat tests
      Bridge.wrap / │ user's wallet                      Electrum-style RPC  │              │ JSON-RPC
      Bridge.unwrap │                                                        ▼              ▼
             ┌──────▼────────────────────┐                        ┌────────────────┐ ┌────────────┐
-            │  Ethereum / Base          │                        │  LBRY hubs     │ │  ETH RPC   │
+            │  Ethereum mainnet         │                        │  LBRY hubs     │ │  ETH RPC   │
             │  Token.sol  Bridge.sol    │                        │  (public)      │ │            │
             └───────────────────────────┘                        └────────────────┘ └────────────┘
 ```
@@ -184,8 +184,9 @@ Next
 - [ ] `status?ethAddress=` lists a user's deposits as pending / ready / minted
 - [ ] Wrap page: deposit address with QR, polling, one-click `Bridge.wrap`
 - [ ] Unwrap page: burn from the wallet, then hand the burn hash to the functions
-- [ ] Deploy Token and Bridge to Base Sepolia, functions to DigitalOcean, UI to
-      App Platform; end-to-end test with testnet LBC
+- [ ] Deploy Token and Bridge to Ethereum mainnet (verified on Etherscan),
+      functions to DigitalOcean, UI to App Platform; end-to-end test with a
+      small LBC deposit
 - [ ] Sweep function: enumerate deposit addresses from `Wrapped` events and
       consolidate into the treasury
 - [ ] Proof of 1:1: publish the deposits and treasury xpubs, `reserves`
@@ -209,18 +210,25 @@ cd src/functions && yarn && yarn test && yarn build
 cd src/ui && yarn && yarn dev
 ```
 
-Deploy contracts with Ignition, for example on Base Sepolia:
+Deploy contracts with Ignition (see Deployments below):
 
 ```sh
 cp .env.example .env                          # PRIVATE_KEY, RPC URLs, explorer keys
-npx hardhat ignition deploy ignition/modules/Bridge.js --network base-sepolia
+npx hardhat ignition deploy ignition/modules/Bridge.js --network mainnet --verify
 ```
 
 ### Deployments
 
 | Network | Deployer / `Bridge.signer()` | Token (wLBC) | Bridge |
 | --- | --- | --- | --- |
-| Base Sepolia (84532) | `0xdc3988Ce217c27db9d46377aF25b537cC229e658` | not yet deployed | not yet deployed |
+| Ethereum mainnet (1) | `0xdc3988Ce217c27db9d46377aF25b537cC229e658` | not yet deployed | not yet deployed |
+
+Rehearse and price a deployment before sending it:
+
+```sh
+DRY_RUN=1 npx hardhat run scripts/dry-run-deploy.js
+npx hardhat ignition deploy ignition/modules/Bridge.js --network mainnet --verify
+```
 
 The deployer key is `PRIVATE_KEY` in the root `.env` and, with a `0x` prefix,
 `SIGNER_PRIVATE_KEY` for the functions.
