@@ -1,4 +1,4 @@
-# lbry.exchange
+# lbc.exchange
 
 A custodial 1:1 bridge between native **LBC** (LBRY Credits) and **wLBC**, an
 ERC-20 on Ethereum mainnet. Deposit LBC, mint wLBC. Burn wLBC, get LBC back.
@@ -216,6 +216,14 @@ Deploy contracts with Ignition (see Deployments below):
 cp .env.example .env                          # PRIVATE_KEY, RPC URLs, explorer keys
 npx hardhat ignition deploy ignition/modules/Bridge.js --network mainnet --verify
 ```
+
+### Hosting
+
+| What | Where |
+| --- | --- |
+| Front end | DigitalOcean App Platform, static site from `src/ui`, spec in `.do/app.yaml`, domain **lbc.exchange** (and `www`), Sydney |
+| Functions | DigitalOcean Functions, `src/functions/project.yml` |
+| DNS | `lbc.exchange` zone in DigitalOcean DNS; point the registrar's name servers at `ns1`, `ns2`, `ns3.digitalocean.com` |
 
 ### Deployments
 

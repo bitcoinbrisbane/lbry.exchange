@@ -1,0 +1,41 @@
+# DigitalOcean App Platform spec for the lbc.exchange front end.
+#
+#   doctl apps create --spec .do/app.yaml --project-id <project>
+#   doctl apps update <app-id> --spec .do/app.yaml
+#
+# The site is a static Vite build of src/ui, rebuilt on every push to main.
+# VITE_* values are baked in at build time; update them here (or in the DO
+# console) and redeploy when the functions or contracts move.
+name: lbc-exchange
+region: syd
+domains:
+  - domain: lbc.exchange
+    type: PRIMARY
+    zone: lbc.exchange
+  - domain: www.lbc.exchange
+    type: ALIAS
+    zone: lbc.exchange
+static_sites:
+  - name: ui
+    github:
+      repo: bitcoinbrisbane/lbry.exchange
+      branch: main
+      deploy_on_push: true
+    source_dir: src/ui
+    environment_slug: node-js
+    build_command: yarn install --frozen-lockfile && yarn build
+    output_dir: dist
+    catchall_document: index.html
+    envs:
+      - key: VITE_BRIDGE_API_URL
+        scope: BUILD_TIME
+        value: ""
+      - key: VITE_WLBC_ADDRESS
+        scope: BUILD_TIME
+        value: ""
+      - key: VITE_BRIDGE_ADDRESS
+        scope: BUILD_TIME
+        value: ""
+      - key: VITE_ETH_RPC_URL
+        scope: BUILD_TIME
+        value: https://ethereum-rpc.publicnode.com
