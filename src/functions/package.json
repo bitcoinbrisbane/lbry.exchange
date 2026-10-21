@@ -1,0 +1,30 @@
+{
+  "name": "lbry-bridge-functions",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DigitalOcean Functions backend for the LBRY bridge: wrap (LBC -> wLBC) and unwrap (wLBC -> LBC)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "deploy": "npm run build && doctl serverless deploy ."
+  },
+  "dependencies": {
+    "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0",
+    "@scure/base": "2.4.0",
+    "@scure/bip32": "2.4.0",
+    "@scure/bip39": "2.4.0",
+    "ethers": "^6.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

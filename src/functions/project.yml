@@ -1,26 +1,33 @@
 # DigitalOcean Functions project spec for the LBRY Bridge backend.
 #
-# Deploy with the doctl serverless plugin from this directory:
+# Build and deploy from this directory (see README.md):
+#   npm install && npm run build
 #   doctl serverless deploy .
 #
-# Each function is web-accessible (web: true) and returns a raw JSON response.
-# Secrets are read from the environment; set them per-function below via
-# ${VAR} interpolation from your shell / .env (see .env.example) or in the DO
-# dashboard. The signer key is a secret and must never be committed.
+# Each function is web-accessible (web: true) and returns JSON. Secrets are
+# read from the environment: export them (or `set -a; source .env`) before
+# deploying so the ${VAR} references below are filled in, or set them in the
+# DigitalOcean dashboard. Never commit real values.
 #
 # Routes (with the default /api/v1/web/bridge/... prefix DO assigns):
-#   POST  .../bridge/wrap     { lbcTxid, ethAddress }
-#   POST  .../bridge/unwrap   { burnTxid }
-#   GET   .../bridge/status   ?lbcTxid= | ?burnTxid=
+#   GET   .../bridge/wrap?ethAddress=0x…         LBC deposit address for that Ethereum address
+#   POST  .../bridge/wrap    { ethAddress, lbcTxid }   signed mint approval for Bridge.wrap
+#   POST  .../bridge/unwrap  { burnTxid }        pays native LBC for a Bridge.unwrap burn
+#   GET   .../bridge/status  ?ethAddress=&lbcTxid=  |  ?burnTxid=
 #   GET   .../bridge/config
 
 environment:
   ETH_RPC_URL: ${ETH_RPC_URL}
+  CHAIN_ID: ${CHAIN_ID}
   BRIDGE_ADDRESS: ${BRIDGE_ADDRESS}
   TOKEN_ADDRESS: ${TOKEN_ADDRESS}
-  CHAIN_ID: ${CHAIN_ID}
-  MANAGED_LBC_ADDRESS: ${MANAGED_LBC_ADDRESS}
+  ETH_MIN_CONFIRMATIONS: ${ETH_MIN_CONFIRMATIONS}
+  LBC_NETWORK: ${LBC_NETWORK}
+  LBC_HUBS: ${LBC_HUBS}
   LBC_MIN_CONFIRMATIONS: ${LBC_MIN_CONFIRMATIONS}
+  LBC_FEE_PER_BYTE: ${LBC_FEE_PER_BYTE}
+  # BIP39 phrase every deposit address and the payout treasury derive from.
+  CUSTODY_MNEMONIC: ${CUSTODY_MNEMONIC}
 
 packages:
   - name: bridge
@@ -33,9 +40,10 @@ packages:
         runtime: "nodejs:18"
         web: true
         limits:
-          timeout: 15000
+          timeout: 20000
           memory: 256
         environment:
+          # Ethereum key matching Bridge.signer(); only the wrap function signs.
           SIGNER_PRIVATE_KEY: ${SIGNER_PRIVATE_KEY}
 
       - name: unwrap
@@ -44,7 +52,7 @@ packages:
         runtime: "nodejs:18"
         web: true
         limits:
-          timeout: 15000
+          timeout: 30000
           memory: 256
 
       - name: status
@@ -53,7 +61,7 @@ packages:
         runtime: "nodejs:18"
         web: true
         limits:
-          timeout: 10000
+          timeout: 20000
           memory: 256
 
       - name: config
@@ -62,5 +70,5 @@ packages:
         runtime: "nodejs:18"
         web: true
         limits:
-          timeout: 5000
+          timeout: 10000
           memory: 128

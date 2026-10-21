@@ -1,0 +1,4 @@
+node_modules
+.env
+# Bundled function entry points, produced by `npm run build`
+packages/bridge/*/index.js
