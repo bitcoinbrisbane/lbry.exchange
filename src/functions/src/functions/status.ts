@@ -35,17 +35,29 @@ async function depositsStatus(env: ReturnType<typeof loadEnv>, ethAddress: strin
   const custody = new Custody(requireMnemonic(), env.lbcNetwork);
   const depositAddress = custody.depositAddress(ethAddress);
   const deposits = await LbcChain.with(env, (chain) => chain.listDeposits(depositAddress));
-  const contract = bridgeContract(env);
-  const minted = await Promise.all(deposits.map((d) => isProcessed(env, lbcTxidToBytes32(d.txid), contract)));
+  // The LBRY side is the primary record. If the contract cannot be read (RPC down,
+  // not deployed yet) the list still comes back, flagged, with mint state unknown:
+  // a mint attempt on an already-minted deposit simply reverts.
+  let minted: (boolean | null)[] = deposits.map(() => null);
+  let warning: string | undefined;
+  try {
+    const contract = bridgeContract(env);
+    minted = await Promise.all(deposits.map((d) => isProcessed(env, lbcTxidToBytes32(d.txid), contract)));
+  } catch (err) {
+    warning = `Could not read the bridge contract: ${err instanceof Error ? ((err as { shortMessage?: string }).shortMessage ?? err.message) : String(err)}`;
+    console.warn(warning);
+  }
   return {
     kind: 'deposits',
     ethAddress,
     depositAddress,
     minConfirmations: env.lbcMinConfirmations,
+    warning,
     deposits: deposits.map((d, i) => ({
       lbcTxid: d.txid,
       amount: d.amount,
       confirmations: d.confirmations,
+      minted: minted[i],
       status: minted[i] ? 'minted' : d.confirmations >= env.lbcMinConfirmations ? 'ready' : 'pending',
     })),
   };

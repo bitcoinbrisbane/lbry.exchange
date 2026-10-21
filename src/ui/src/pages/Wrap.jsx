@@ -120,10 +120,10 @@ export function Wrap() {
 							<Heading as="h2" size="md">
 								Deposits
 							</Heading>
-							{statusError && (
+							{(statusError || status?.warning) && (
 								<Alert status="warning" borderRadius="md" fontSize="sm">
 									<AlertIcon />
-									{statusError}
+									{statusError || status.warning}
 								</Alert>
 							)}
 							<DepositList deposits={status?.deposits} minConfirmations={status?.minConfirmations ?? deposit.minConfirmations} onMint={mint} minting={minting} />
