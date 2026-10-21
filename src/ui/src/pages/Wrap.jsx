@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ConnectWallet } from "../components/ConnectWallet";
 import { DepositCard } from "../components/DepositCard";
 import { DepositList } from "../components/DepositList";
+import { LastChecked } from "../components/LastChecked";
 import { useWallet } from "../contexts/WalletContext";
 import { useBridgeConfig } from "../hooks/useBridgeConfig";
 import { usePolling } from "../hooks/usePolling";
@@ -57,6 +58,8 @@ export function Wrap() {
   const {
     data: status,
     error: statusError,
+    loading: statusLoading,
+    updatedAt: statusUpdatedAt,
     refresh,
   } = usePolling(fetchDeposits, POLL_MS, Boolean(address && deposit), [fetchDeposits]);
 
@@ -136,9 +139,17 @@ export function Wrap() {
           <>
             <DepositCard {...deposit} />
             <VStack align="stretch" spacing={3}>
-              <Heading as="h2" size="md">
-                Deposits
-              </Heading>
+              <HStack justify="space-between" align="center" flexWrap="wrap" gap={2}>
+                <Heading as="h2" size="md">
+                  Deposits
+                </Heading>
+                <LastChecked
+                  updatedAt={statusUpdatedAt}
+                  intervalMs={POLL_MS}
+                  loading={statusLoading}
+                  onRefresh={refresh}
+                />
+              </HStack>
               {(statusError || status?.warning) && (
                 <Alert status="warning" borderRadius="md" fontSize="sm">
                   <AlertIcon />
