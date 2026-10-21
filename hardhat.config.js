@@ -1,8 +1,7 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
-const { PRIVATE_KEY, MAINNET_RPC_URL, BASE_RPC_URL, BASE_SEPOLIA_RPC_URL, ETHERSCAN_API_KEY, BASESCAN_API_KEY } =
-  process.env;
+const { PRIVATE_KEY, MAINNET_RPC_URL, BASE_RPC_URL, BASE_SEPOLIA_RPC_URL, ETHERSCAN_API_KEY } = process.env;
 
 // Only attach an account when a key is present, so tasks that don't need to
 // sign (compile, test) work without a configured key.
@@ -51,29 +50,8 @@ module.exports = {
       accounts,
     },
   },
+  // Etherscan API V2: one key serves every chain (mainnet, Base, Base Sepolia, ...).
   etherscan: {
-    apiKey: {
-      mainnet: ETHERSCAN_API_KEY || "",
-      base: BASESCAN_API_KEY || "",
-      "base-sepolia": BASESCAN_API_KEY || "",
-    },
-    customChains: [
-      {
-        network: "base",
-        chainId: 8453,
-        urls: {
-          apiURL: "https://api.basescan.org/api",
-          browserURL: "https://basescan.org",
-        },
-      },
-      {
-        network: "base-sepolia",
-        chainId: 84532,
-        urls: {
-          apiURL: "https://api-sepolia.basescan.org/api",
-          browserURL: "https://sepolia.basescan.org",
-        },
-      },
-    ],
+    apiKey: ETHERSCAN_API_KEY || "",
   },
 };
