@@ -79,14 +79,6 @@ export function Header() {
             LBRY.com
           </Link>
           <Link 
-            href="https://odysee.com"
-            isExternal
-            fontSize={["xs", "sm"]}
-            fontWeight="medium"
-          >
-            Odysee
-          </Link>
-          <Link 
             href="https://lbry.tech"
             isExternal
             fontSize={["xs", "sm"]}
