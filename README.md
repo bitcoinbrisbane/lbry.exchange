@@ -184,9 +184,10 @@ Next
 - [ ] `status?ethAddress=` lists a user's deposits as pending / ready / minted
 - [ ] Wrap page: deposit address with QR, polling, one-click `Bridge.wrap`
 - [ ] Unwrap page: burn from the wallet, then hand the burn hash to the functions
-- [x] Token and Bridge deployed to Ethereum mainnet; front end on App Platform
-- [ ] Verify the contracts on Etherscan; deploy the functions to DigitalOcean;
-      end-to-end test with a small LBC deposit
+- [x] Token and Bridge deployed to Ethereum mainnet and verified on Etherscan;
+      front end on App Platform
+- [ ] Deploy the functions to DigitalOcean; end-to-end test with a small LBC
+      deposit
 - [ ] Sweep function: enumerate deposit addresses from `Wrapped` events and
       consolidate into the treasury
 - [ ] Proof of 1:1: publish the deposits and treasury xpubs, `reserves`
@@ -231,8 +232,8 @@ npx hardhat ignition deploy ignition/modules/Bridge.js --network mainnet --verif
 | --- | --- | --- | --- |
 | Ethereum mainnet (1) | [`0xdc3988Ce217c27db9d46377aF25b537cC229e658`](https://etherscan.io/address/0xdc3988Ce217c27db9d46377aF25b537cC229e658) | [`0xB0F2C4f8b7c0f088f7844947EcBf1220bFCa08C1`](https://etherscan.io/token/0xB0F2C4f8b7c0f088f7844947EcBf1220bFCa08C1) | [`0xa3A3E8304C88b017153bA5dFCCDACCB7116a185f`](https://etherscan.io/address/0xa3A3E8304C88b017153bA5dFCCDACCB7116a185f) |
 
-Deployed 21 October 2026 with `ignition/modules/Bridge.js`; the Ignition journal is
-in `ignition/deployments/chain-1`. `Bridge.signer()` and both `owner()`s are the
+Deployed 21 October 2026 with `ignition/modules/Bridge.js` and source-verified on
+Etherscan; the Ignition journal is in `ignition/deployments/chain-1`. `Bridge.signer()` and both `owner()`s are the
 deployer.
 
 Rehearse and price a deployment before sending it:
