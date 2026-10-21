@@ -8,6 +8,7 @@ export function usePolling(fn, intervalMs, enabled, deps = []) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState(null);
   const alive = useRef(true);
 
   const run = useCallback(async () => {
@@ -17,6 +18,7 @@ export function usePolling(fn, intervalMs, enabled, deps = []) {
       if (alive.current) {
         setData(result);
         setError(null);
+        setUpdatedAt(Date.now());
       }
     } catch (err) {
       if (alive.current) setError(err.message || String(err));
@@ -37,5 +39,5 @@ export function usePolling(fn, intervalMs, enabled, deps = []) {
     };
   }, [enabled, intervalMs, run]);
 
-  return { data, error, loading, refresh: run };
+  return { data, error, loading, updatedAt, refresh: run };
 }
