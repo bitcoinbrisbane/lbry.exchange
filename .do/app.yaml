@@ -32,10 +32,10 @@ static_sites:
         value: ""
       - key: VITE_WLBC_ADDRESS
         scope: BUILD_TIME
-        value: ""
+        value: 0xB0F2C4f8b7c0f088f7844947EcBf1220bFCa08C1
       - key: VITE_BRIDGE_ADDRESS
         scope: BUILD_TIME
-        value: ""
+        value: 0xa3A3E8304C88b017153bA5dFCCDACCB7116a185f
       - key: VITE_ETH_RPC_URL
         scope: BUILD_TIME
         value: https://ethereum-rpc.publicnode.com
