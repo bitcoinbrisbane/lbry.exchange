@@ -224,7 +224,7 @@ npx hardhat ignition deploy ignition/modules/Bridge.js --network mainnet --verif
 | --- | --- |
 | Front end | DigitalOcean App Platform, static site from `src/ui`, spec in `.do/app.yaml`, domain **lbc.exchange** (and `www`), Sydney |
 | Functions | DigitalOcean Functions, `src/functions/project.yml` |
-| DNS | `lbc.exchange` zone in DigitalOcean DNS; point the registrar's name servers at `ns1`, `ns2`, `ns3.digitalocean.com` |
+| DNS | `lbc.exchange` zone in DigitalOcean DNS (registrar name servers → `ns1`, `ns2`, `ns3.digitalocean.com`). Apex `A` → App Platform ingress `162.159.140.98`, `172.66.0.96`; `www` `CNAME` → `lbc-exchange-4geaw.ondigitalocean.app` |
 
 ### Deployments
 
