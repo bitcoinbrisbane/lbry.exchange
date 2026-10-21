@@ -1,28 +1,169 @@
 # lbry.exchange
 
-A custodial 1:1 bridge between native LBC (LBRY Credits) and **wLBC**, an
-ERC-20 on Ethereum / Base.
+A custodial 1:1 bridge between native **LBC** (LBRY Credits) and **wLBC**, an
+ERC-20 on Ethereum / Base. Deposit LBC, mint wLBC. Burn wLBC, get LBC back.
 
 ```
-contracts/      Token.sol (wLBC), Bridge.sol (mint on verified deposit, burn to unwrap)
-src/functions/  DigitalOcean Functions (TypeScript): deposit addresses, mint approvals, payouts
-src/ui/         React + Chakra front end: Wrap and Unwrap
+contracts/      Token.sol (wLBC), Bridge.sol (mint on verified deposit, burn to unwrap), Sale.sol
+src/functions/  DigitalOcean Functions (TypeScript): deposit addresses, mint approvals, LBC payouts
+src/ui/         React + Chakra front end: Wrap and Unwrap pages
 test/           Hardhat tests
 ```
 
-There is no database. Deposit addresses derive from a seed per Ethereum
-address, mint state lives in the contract, and payouts are tagged on the LBRY
-chain. See [src/functions/README.md](src/functions/README.md) for the design
-and endpoints.
+## Architecture
+
+```
+            ┌──────────────┐   GET wrap / status / POST wrap, unwrap   ┌──────────────────────┐
+            │  Front end   │ ─────────────────────────────────────────▶ │  Functions (DO FaaS) │
+            │  src/ui      │ ◀───────────────────────────────────────── │  src/functions       │
+            └──────┬───────┘        JSON, no sessions, no database      └───┬──────────────┬───┘
+                   │                                                        │              │
+     Bridge.wrap / │ user's wallet                      Electrum-style RPC  │              │ JSON-RPC
+     Bridge.unwrap │                                                        ▼              ▼
+            ┌──────▼────────────────────┐                        ┌────────────────┐ ┌────────────┐
+            │  Ethereum / Base          │                        │  LBRY hubs     │ │  ETH RPC   │
+            │  Token.sol  Bridge.sol    │                        │  (public)      │ │            │
+            └───────────────────────────┘                        └────────────────┘ └────────────┘
+```
+
+### Components
+
+- **Token.sol** — wLBC, an OpenZeppelin ERC-20 with 8 decimals so 1 dewey = 1
+  token unit. Only the bridge can mint and burn.
+- **Bridge.sol** — holds a `signer` address and a `processed[lbcTxid]` map.
+  `wrap(to, amount, lbcTxid, signature)` mints once per LBC deposit if the
+  signature over `wrapMessageHash` came from the signer. `unwrap(amount,
+  lbcAddress)` burns the caller's wLBC and emits `Unwrap(id, from, amount,
+  lbcAddress)`. Both are permissionless to call.
+- **Functions** — four small HTTP endpoints. `wrap` derives deposit addresses and
+  signs mint approvals, `unwrap` pays native LBC for burns, `status` reports
+  progress, `config` publishes parameters. LBRY chain access uses the wallet core
+  from [bitcoinbrisbane/lBC-wallet-with-mining-ability](https://github.com/bitcoinbrisbane/lBC-wallet-with-mining-ability)
+  (MIT), vendored verbatim under `src/functions/src/lib/lbc`: HD keys,
+  addresses, transaction building and signing, and a hub client that copes with
+  both hub implementations.
+- **Front end** — connects a wallet, shows the user's deposit address with a QR
+  code, polls for progress and relays `Bridge.wrap` from the user's own wallet.
+  State is cached in `localStorage` for convenience only.
+
+### Stateless by design
+
+There is no database. Both chains are the ledger.
+
+| Fact | Where it lives | How it is recovered |
+| --- | --- | --- |
+| A user's deposit address | derived from the custody seed | pure function of the Ethereum address |
+| Deposits and their confirmations | LBRY chain | hub history of the deposit address |
+| Whether a deposit is minted | `Bridge.processed[lbcTxid]` | contract read |
+| Mint approval signature | never stored | RFC 6979 makes re-signing yield the same bytes |
+| Unwrap requests | `Unwrap` events | Ethereum receipt of the burn |
+| Whether an unwrap is paid | LBRY chain | treasury history, OP_RETURN marker `"wLBC" ‖ burn hash ‖ id` |
+
+If a user clears their browser mid-flow they reconnect the wallet and continue.
+If the functions are redeployed nothing is lost. If the seed is restored into
+any BIP44 wallet, account 1 shows the treasury.
+
+### Keys
+
+One BIP39 phrase (`CUSTODY_MNEMONIC`) controls the LBC side:
+
+```
+deposits   m/44'/140'/0'/2/c0/c1/c2/c3/c4/c5    c0..c5 = the user's 160-bit Ethereum address
+                                                 split into six 31-bit child indexes
+treasury   m/44'/140'/1'/0/0                     pays out unwraps
+```
+
+Because a deposit address is a function of the recipient, LBC sent to it can
+only ever be minted to that recipient. Handing out an address needs no
+authentication: anyone requesting X's address can only help X.
+
+A separate Ethereum key (`SIGNER_PRIVATE_KEY`) must match `Bridge.signer()`.
+It signs mint approvals and nothing else. The wrap function refuses to sign
+when the two disagree.
+
+### Wrap: LBC → wLBC
+
+```
+user                front end              functions                 LBRY        Ethereum
+ │ connect wallet       │                      │                       │             │
+ │─────────────────────▶│ GET wrap?ethAddress  │                       │             │
+ │                      │─────────────────────▶│ derive address        │             │
+ │   show address + QR  │◀─────────────────────│                       │             │
+ │ send LBC ───────────────────────────────────────────────────────────▶│             │
+ │                      │ GET status?ethAddress (poll)                 │             │
+ │                      │─────────────────────▶│ history ─────────────▶│             │
+ │                      │                      │ processed? ─────────────────────────▶│
+ │   pending n/6        │◀─────────────────────│                       │             │
+ │                      │ POST wrap {ethAddress, lbcTxid}  (when ≥ 6)  │             │
+ │                      │─────────────────────▶│ verify, sign approval │             │
+ │                      │◀─────────────────────│ {to, amount, lbcTxid, signature}    │
+ │ confirm in wallet    │ Bridge.wrap(...) ───────────────────────────────────────────▶│ mint
+ │   minted             │◀────────────────────────────────────────────────────────────│
+```
+
+The user pays the Ethereum gas. The custodian never holds an Ethereum key with
+funds, only the approval signer.
+
+### Unwrap: wLBC → LBC
+
+```
+user                front end              functions                 LBRY        Ethereum
+ │ Bridge.unwrap(amount, lbcAddress) ──────────────────────────────────────────────────▶│ burn + event
+ │                      │ POST unwrap {burnTxid}                       │             │
+ │                      │─────────────────────▶│ receipt, events ────────────────────▶│
+ │                      │                      │ wait ≥ 12 confirmations             │
+ │                      │                      │ marker already paid? ▶│             │
+ │                      │                      │ build, sign, broadcast▶│ payout      │
+ │   paid, lbc txid     │◀─────────────────────│                       │             │
+```
+
+The payout spends from the treasury, pays the full burned amount (fees come
+from the treasury), and carries the OP_RETURN marker. Repeating the request is
+harmless.
+
+### Trust model
+
+This is fully custodial. Whoever holds the seed holds every deposit and the
+treasury; whoever holds the signer key can mint. The `signer` slot on the
+contract is separate from `owner` so it can move to a multisig or threshold
+signer later without changing the interface. The bridge should hold only what
+the operator is prepared to be liable for.
+
+## Plan
+
+Done
+
+- [x] Token and Bridge contracts with tests
+- [x] Functions: per-user deposit addresses, mint approvals, idempotent LBC
+      payouts, status and config; unit tests including a hash vector from the
+      real contract
+- [x] Front end shell on Node 24 with Wrap and Unwrap routes
+- [x] Old order-book API, Mongo and Docker removed
+
+Next
+
+- [ ] `status?ethAddress=` lists a user's deposits as pending / ready / minted
+- [ ] Wrap page: deposit address with QR, polling, one-click `Bridge.wrap`
+- [ ] Unwrap page: burn from the wallet, then hand the burn hash to the functions
+- [ ] Deploy Token and Bridge to Base Sepolia, functions to DigitalOcean, UI to
+      App Platform; end-to-end test with testnet LBC
+- [ ] Sweep function: enumerate deposit addresses from `Wrapped` events and
+      consolidate into the treasury
+- [ ] Alerting on treasury balance and on unwraps left unpaid
+
+Later
+
+- [ ] Move `signer` to a multisig or threshold scheme
+- [ ] Publish proof of reserves: treasury plus unswept deposits versus wLBC supply
+- [ ] Decide the future of `Sale.sol` (USDC-priced LBC sales), which is
+      independent of the bridge
 
 ## Develop
 
 Node 24 (`nvm use`).
 
 ```sh
-yarn                      # hardhat + contracts
-npx hardhat test
-
+yarn && npx hardhat test                      # contracts
 cd src/functions && yarn && yarn test && yarn build
 cd src/ui && yarn && yarn dev
 ```
@@ -30,6 +171,9 @@ cd src/ui && yarn && yarn dev
 Deploy contracts with Ignition, for example on Base Sepolia:
 
 ```sh
-cp .env.example .env      # PRIVATE_KEY, RPC URLs, explorer keys
+cp .env.example .env                          # PRIVATE_KEY, RPC URLs, explorer keys
 npx hardhat ignition deploy ignition/modules/Bridge.js --network base-sepolia
 ```
+
+Function configuration, endpoints and deployment are in
+[src/functions/README.md](src/functions/README.md).
