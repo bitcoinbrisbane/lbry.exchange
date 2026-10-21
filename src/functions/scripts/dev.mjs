@@ -12,6 +12,13 @@ const PORT = Number(process.env.PORT || 8787);
 const PREFIX = "/api/v1/web/bridge/";
 const FUNCTIONS = ["wrap", "unwrap", "status", "config"];
 
+// The DigitalOcean gateway adds these in production; add them here so the browser is happy locally.
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
 const handlers = Object.fromEntries(
   FUNCTIONS.map((name) => [name, require(resolve(here, `../packages/bridge/${name}/index.js`)).main]),
 );
@@ -23,8 +30,12 @@ http
     const main = name && handlers[name];
     if (!main) {
       res
-        .writeHead(404, { "Content-Type": "application/json" })
+        .writeHead(404, { ...CORS, "Content-Type": "application/json" })
         .end(JSON.stringify({ error: `no function at ${url.pathname}` }));
+      return;
+    }
+    if (req.method === "OPTIONS") {
+      res.writeHead(204, CORS).end();
       return;
     }
     let raw = "";
@@ -34,7 +45,9 @@ http
       try {
         body = JSON.parse(raw);
       } catch {
-        res.writeHead(400, { "Content-Type": "application/json" }).end(JSON.stringify({ error: "Body must be JSON" }));
+        res
+          .writeHead(400, { ...CORS, "Content-Type": "application/json" })
+          .end(JSON.stringify({ error: "Body must be JSON" }));
         return;
       }
     }
@@ -49,7 +62,7 @@ http
     };
     const started = Date.now();
     const out = await main(args);
-    res.writeHead(out.statusCode, out.headers).end(out.body);
+    res.writeHead(out.statusCode, { ...CORS, ...out.headers }).end(out.body);
     console.log(`${req.method} ${url.pathname}${url.search} → ${out.statusCode} (${Date.now() - started}ms)`);
   })
   .listen(PORT, () => console.log(`bridge functions at http://localhost:${PORT}${PREFIX}{${FUNCTIONS.join(",")}}`));

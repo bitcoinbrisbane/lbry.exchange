@@ -12,3 +12,4 @@ src/functions/src/lib/lbc
 *.lock
 *.md
 *.sol
+src/functions/.deployed
