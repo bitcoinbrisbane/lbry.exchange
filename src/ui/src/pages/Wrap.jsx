@@ -129,7 +129,7 @@ export function Wrap() {
 							<DepositList deposits={status?.deposits} minConfirmations={status?.minConfirmations ?? deposit.minConfirmations} onMint={mint} minting={minting} />
 						</VStack>
 						{config && (
-							<Text fontSize="xs" color="gray.500">
+							<Text fontSize="sm" color="gray.500">
 								Bridge {config.bridgeAddress} on chain {config.chainId}. Minting is an Ethereum transaction from your wallet; you pay the gas.
 							</Text>
 						)}
