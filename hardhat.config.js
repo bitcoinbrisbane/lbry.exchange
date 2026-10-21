@@ -22,6 +22,11 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: 31337,
+      // DRY_RUN=1 puts the real deployer key on the in-process chain with a
+      // funded balance, so a deployment can be rehearsed as that account.
+      ...(process.env.DRY_RUN && PRIVATE_KEY
+        ? { accounts: [{ privateKey: PRIVATE_KEY.startsWith("0x") ? PRIVATE_KEY : `0x${PRIVATE_KEY}`, balance: "1000000000000000000" }] }
+        : {}),
     },
     mainnet: {
       url: MAINNET_RPC_URL || "",
