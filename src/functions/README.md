@@ -60,7 +60,7 @@ refuses to sign when it does not.
 ## Develop
 
 ```sh
-nvm use                 # Node 22 locally; functions run on nodejs:18
+nvm use                 # Node 24, matching the nodejs:24 runtime
 npm install
 npm test                # vitest unit tests
 npm run typecheck

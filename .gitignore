@@ -416,3 +416,9 @@ node_modules
 
 # Hardhat Ignition default folder for deployments against a local node
 ignition/deployments/chain-31337
+
+# OS cruft
+.DS_Store
+
+# UI build output (built by the host at deploy time)
+src/ui/dist

@@ -59,22 +59,6 @@ export function Header() {
             fontSize={["xs", "sm"]}
             fontWeight="medium"
           >
-            Buy LBC
-          </Link>
-          <Link
-            as={RouterLink}
-            to="/sell"
-            fontSize={["xs", "sm"]}
-            fontWeight="medium"
-          >
-            Sell LBC
-          </Link>
-          <Link
-            as={RouterLink}
-            to="/wrap"
-            fontSize={["xs", "sm"]}
-            fontWeight="medium"
-          >
             Wrap
           </Link>
           <Link

@@ -5,7 +5,7 @@
   "description": "DigitalOcean Functions backend for the LBRY bridge: wrap (LBC -> wLBC) and unwrap (wLBC -> LBC)",
   "license": "MIT",
   "engines": {
-    "node": ">=18"
+    "node": ">=24"
   },
   "scripts": {
     "build": "node scripts/build.mjs",

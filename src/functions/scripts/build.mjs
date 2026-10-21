@@ -15,7 +15,7 @@ await Promise.all(
       outfile: `${outdir}/index.js`,
       bundle: true,
       platform: 'node',
-      target: 'node18',
+      target: 'node24',
       format: 'cjs',
       sourcemap: false,
       logLevel: 'info',
