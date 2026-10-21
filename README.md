@@ -216,5 +216,26 @@ cp .env.example .env                          # PRIVATE_KEY, RPC URLs, explorer 
 npx hardhat ignition deploy ignition/modules/Bridge.js --network base-sepolia
 ```
 
+### Deployments
+
+| Network | Deployer / `Bridge.signer()` | Token (wLBC) | Bridge |
+| --- | --- | --- | --- |
+| Base Sepolia (84532) | `0xdc3988Ce217c27db9d46377aF25b537cC229e658` | not yet deployed | not yet deployed |
+
+The deployer key is `PRIVATE_KEY` in the root `.env` and, with a `0x` prefix,
+`SIGNER_PRIVATE_KEY` for the functions.
+
+### Secrets
+
+`.env` files are gitignored. To carry them between machines they are encrypted
+with GPG to the Bitcoin Brisbane key and the `.env.gpg` files committed:
+
+```sh
+scripts/env-encrypt.sh        # .env -> .env.gpg (also src/functions and src/ui when present)
+scripts/env-decrypt.sh        # .env.gpg -> .env on a new machine
+```
+
+`scripts/env-encrypt.sh --symmetric` uses a passphrase instead of the key.
+
 Function configuration, endpoints and deployment are in
 [src/functions/README.md](src/functions/README.md).
