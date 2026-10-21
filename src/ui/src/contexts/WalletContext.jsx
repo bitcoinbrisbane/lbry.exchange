@@ -21,7 +21,7 @@ export function WalletProvider({ children }) {
       setAddress(accounts[0]);
       setError(null);
       // Store connection state
-      localStorage.setItem('walletConnected', 'true');
+      localStorage.setItem("walletConnected", "true");
     } catch (err) {
       setError("Failed to connect wallet");
       console.error(err);
@@ -33,26 +33,26 @@ export function WalletProvider({ children }) {
   // Stable handler identities so add/removeListener operate on the same
   // function reference (otherwise cleanup silently fails and leaks listeners).
   const handleAccountsChanged = useCallback((accounts) => {
-    if (accounts.length > 0 && localStorage.getItem('walletConnected') === 'true') {
+    if (accounts.length > 0 && localStorage.getItem("walletConnected") === "true") {
       setAddress(accounts[0]);
     } else {
       // MetaMask disconnected or locked
       setAddress(null);
-      localStorage.removeItem('walletConnected');
+      localStorage.removeItem("walletConnected");
     }
   }, []);
 
   const handleDisconnect = useCallback(() => {
     setAddress(null);
     setError(null);
-    localStorage.removeItem('walletConnected');
+    localStorage.removeItem("walletConnected");
   }, []);
 
   const disconnectWallet = useCallback(async () => {
     // Clear the selected address regardless of provider availability.
     setAddress(null);
     setError(null);
-    localStorage.removeItem('walletConnected');
+    localStorage.removeItem("walletConnected");
 
     if (window.ethereum) {
       try {
@@ -70,13 +70,13 @@ export function WalletProvider({ children }) {
     if (!window.ethereum) return;
 
     // Only restore the connection if the user previously connected.
-    if (localStorage.getItem('walletConnected') === 'true') {
+    if (localStorage.getItem("walletConnected") === "true") {
       window.ethereum.request({ method: "eth_accounts" }).then((accounts) => {
         if (accounts.length > 0) {
           setAddress(accounts[0]);
         } else {
           // If no accounts found, clear connection state
-          localStorage.removeItem('walletConnected');
+          localStorage.removeItem("walletConnected");
         }
       });
     }
@@ -111,4 +111,4 @@ export function useWallet() {
     throw new Error("useWallet must be used within a WalletProvider");
   }
   return context;
-} 
+}

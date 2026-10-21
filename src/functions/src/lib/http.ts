@@ -37,7 +37,7 @@ export class HttpError extends Error {
     readonly extra: Record<string, unknown> = {},
   ) {
     super(message);
-    this.name = 'HttpError';
+    this.name = "HttpError";
   }
 }
 
@@ -50,34 +50,34 @@ export class Reply {
 }
 
 const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
 };
 
 function serialize(value: unknown): string {
-  return JSON.stringify(value, (_key, v) => (typeof v === 'bigint' ? v.toString() : v));
+  return JSON.stringify(value, (_key, v) => (typeof v === "bigint" ? v.toString() : v));
 }
 
 export function json(statusCode: number, body: unknown): DoResponse {
-  return { statusCode, headers: { ...CORS, 'Content-Type': 'application/json' }, body: serialize(body) };
+  return { statusCode, headers: { ...CORS, "Content-Type": "application/json" }, body: serialize(body) };
 }
 
 export function parseRequest(args: DoArgs): Request {
-  const method = (args.__ow_method ?? 'get').toUpperCase();
+  const method = (args.__ow_method ?? "get").toUpperCase();
   const params: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(args)) if (!key.startsWith('__ow_')) params[key] = value;
+  for (const [key, value] of Object.entries(args)) if (!key.startsWith("__ow_")) params[key] = value;
   // With "raw HTTP" enabled the body arrives unparsed instead of merged into args.
-  if (typeof args.__ow_body === 'string' && args.__ow_body) {
-    const text = args.__ow_isBase64Encoded ? Buffer.from(args.__ow_body, 'base64').toString('utf8') : args.__ow_body;
+  if (typeof args.__ow_body === "string" && args.__ow_body) {
+    const text = args.__ow_isBase64Encoded ? Buffer.from(args.__ow_body, "base64").toString("utf8") : args.__ow_body;
     try {
       const parsed: unknown = JSON.parse(text);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) Object.assign(params, parsed);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) Object.assign(params, parsed);
     } catch {
-      throw new HttpError(400, 'Body must be JSON');
+      throw new HttpError(400, "Body must be JSON");
     }
   }
-  if (typeof args.__ow_query === 'string' && args.__ow_query) {
+  if (typeof args.__ow_query === "string" && args.__ow_query) {
     for (const [key, value] of new URLSearchParams(args.__ow_query)) if (!(key in params)) params[key] = value;
   }
   return { method, params };
@@ -86,7 +86,7 @@ export function parseRequest(args: DoArgs): Request {
 /** A required string parameter, optionally matching a pattern. */
 export function requireString(params: Record<string, unknown>, key: string, pattern?: RegExp): string {
   const value = params[key];
-  if (typeof value !== 'string' || !value.trim()) throw new HttpError(400, `${key} is required`);
+  if (typeof value !== "string" || !value.trim()) throw new HttpError(400, `${key} is required`);
   const text = value.trim();
   if (pattern && !pattern.test(text)) throw new HttpError(400, `${key} is malformed`);
   return text;
@@ -94,7 +94,7 @@ export function requireString(params: Record<string, unknown>, key: string, patt
 
 export function optionalString(params: Record<string, unknown>, key: string): string | undefined {
   const value = params[key];
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 export type Handler = (request: Request) => Promise<unknown>;
@@ -109,10 +109,12 @@ export function handle(allowedMethods: string[], fn: Handler): (args: DoArgs) =>
     try {
       request = parseRequest(args);
     } catch (err) {
-      return err instanceof HttpError ? json(err.status, { error: err.message, ...err.extra }) : json(400, { error: 'Bad request' });
+      return err instanceof HttpError
+        ? json(err.status, { error: err.message, ...err.extra })
+        : json(400, { error: "Bad request" });
     }
-    if (request.method === 'OPTIONS') return { statusCode: 204, headers: CORS, body: '' };
-    if (!allowedMethods.includes(request.method)) return json(405, { error: `Use ${allowedMethods.join(' or ')}` });
+    if (request.method === "OPTIONS") return { statusCode: 204, headers: CORS, body: "" };
+    if (!allowedMethods.includes(request.method)) return json(405, { error: `Use ${allowedMethods.join(" or ")}` });
     try {
       const result = await fn(request);
       return result instanceof Reply ? json(result.status, result.body) : json(200, result);
@@ -121,8 +123,8 @@ export function handle(allowedMethods: string[], fn: Handler): (args: DoArgs) =>
       const message = err instanceof Error ? err.message : String(err);
       console.error(`${request.method} failed: ${message}`, err);
       // Configuration mistakes are the operator's to see; everything else stays generic.
-      const isConfig = err instanceof Error && err.name === 'ConfigError';
-      return json(isConfig ? 503 : 500, { error: isConfig ? `Service misconfigured: ${message}` : 'Internal error' });
+      const isConfig = err instanceof Error && err.name === "ConfigError";
+      return json(isConfig ? 503 : 500, { error: isConfig ? `Service misconfigured: ${message}` : "Internal error" });
     }
   };
 }

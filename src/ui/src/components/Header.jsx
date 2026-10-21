@@ -1,19 +1,10 @@
-import {
-  Box,
-  Flex,
-  Text,
-  Image,
-  Link,
-  HStack,
-  useColorModeValue
-} from '@chakra-ui/react'
-import { Link as RouterLink } from 'react-router-dom'
-import { ConnectWallet } from './ConnectWallet'
-
+import { Box, Flex, Text, Image, Link, HStack, useColorModeValue } from "@chakra-ui/react";
+import { Link as RouterLink } from "react-router-dom";
+import { ConnectWallet } from "./ConnectWallet";
 
 export function Header() {
-  const bgColor = useColorModeValue('white', 'gray.800')
-  const borderColor = useColorModeValue('gray.200', 'gray.700')
+  const bgColor = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
 
   return (
     <Box
@@ -32,16 +23,12 @@ export function Header() {
         mx="auto"
         justify="space-between"
         align="center"
-        direction={['column', 'row']}
+        direction={["column", "row"]}
         gap={[4, 0]}
       >
-        <Link as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
+        <Link as={RouterLink} to="/" _hover={{ textDecoration: "none" }}>
           <HStack spacing={3}>
-            <Image
-              src="https://lbry.com/img/logo.svg"
-              alt="LBRY"
-              h={["24px", "32px"]}
-            />
+            <Image src="https://lbry.com/img/logo.svg" alt="LBRY" h={["24px", "32px"]} />
             <Text
               fontSize={["xl", "2xl"]}
               fontWeight="bold"
@@ -54,41 +41,21 @@ export function Header() {
         </Link>
 
         <HStack spacing={[3, 6]}>
-          <Link
-            as={RouterLink}
-            to="/"
-            fontSize={["xs", "sm"]}
-            fontWeight="medium"
-          >
+          <Link as={RouterLink} to="/" fontSize={["xs", "sm"]} fontWeight="medium">
             Wrap
           </Link>
-          <Link
-            as={RouterLink}
-            to="/unwrap"
-            fontSize={["xs", "sm"]}
-            fontWeight="medium"
-          >
+          <Link as={RouterLink} to="/unwrap" fontSize={["xs", "sm"]} fontWeight="medium">
             Unwrap
           </Link>
-          <Link 
-            href="https://lbry.com"
-            isExternal
-            fontSize={["xs", "sm"]}
-            fontWeight="medium"
-          >
+          <Link href="https://lbry.com" isExternal fontSize={["xs", "sm"]} fontWeight="medium">
             LBRY.com
           </Link>
-          <Link 
-            href="https://lbry.tech"
-            isExternal
-            fontSize={["xs", "sm"]}
-            fontWeight="medium"
-          >
+          <Link href="https://lbry.tech" isExternal fontSize={["xs", "sm"]} fontWeight="medium">
             Developers
           </Link>
           <ConnectWallet />
         </HStack>
       </Flex>
     </Box>
-  )
-} 
+  );
+}

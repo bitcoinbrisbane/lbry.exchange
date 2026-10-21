@@ -15,8 +15,14 @@ async function main() {
     return tx;
   };
 
-  const token = await record("deploy Token", ethers.getContractFactory("Token").then((f) => f.deploy()));
-  const bridge = await record("deploy Bridge", ethers.getContractFactory("Bridge").then((f) => f.deploy(token.target)));
+  const token = await record(
+    "deploy Token",
+    ethers.getContractFactory("Token").then((f) => f.deploy()),
+  );
+  const bridge = await record(
+    "deploy Bridge",
+    ethers.getContractFactory("Bridge").then((f) => f.deploy(token.target)),
+  );
   await record("token.setBridge", token.setBridge(bridge.target));
 
   const checks = {
@@ -31,7 +37,11 @@ async function main() {
   const totalGas = steps.reduce((s, x) => s + x.gasUsed, 0n);
   const targetUrl = process.env.TARGET_RPC_URL || process.env.MAINNET_RPC_URL || "https://ethereum-rpc.publicnode.com";
   const target = new ethers.JsonRpcProvider(targetUrl);
-  const [net, fee, balance] = await Promise.all([target.getNetwork(), target.getFeeData(), target.getBalance(deployer.address)]);
+  const [net, fee, balance] = await Promise.all([
+    target.getNetwork(),
+    target.getFeeData(),
+    target.getBalance(deployer.address),
+  ]);
   const gasPrice = fee.maxFeePerGas ?? fee.gasPrice;
   const cost = totalGas * gasPrice;
 
@@ -48,7 +58,9 @@ async function main() {
     ok &&= pass;
     console.log(`  ${pass ? "ok  " : "FAIL"} ${label}`);
   }
-  console.log(`\nverdict             ${!ok ? "wiring checks failed" : balance >= cost * 2n ? "ready to deploy" : balance >= cost ? "deployable, but little headroom" : "fund the deployer first"}`);
+  console.log(
+    `\nverdict             ${!ok ? "wiring checks failed" : balance >= cost * 2n ? "ready to deploy" : balance >= cost ? "deployable, but little headroom" : "fund the deployer first"}`,
+  );
   if (!ok) process.exit(1);
 }
 

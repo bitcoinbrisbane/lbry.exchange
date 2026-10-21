@@ -5,29 +5,29 @@
  *   ?ethAddress=0x…&lbcTxid=…   one deposit in detail
  *   ?burnTxid=0x…               an unwrap: burn confirmations and the LBC payout, if sent
  */
-import { LbcChain } from '../lib/chain.js';
-import { loadEnv, requireMnemonic } from '../lib/config.js';
-import { Custody } from '../lib/custody.js';
-import { bridgeContract, isProcessed, lbcTxidToBytes32, lookupBurn } from '../lib/eth.js';
-import { handle, HttpError, optionalString } from '../lib/http.js';
-import { parseEthAddress } from './wrap.js';
-import { parseBurnTxid } from './unwrap.js';
+import { LbcChain } from "../lib/chain.js";
+import { loadEnv, requireMnemonic } from "../lib/config.js";
+import { Custody } from "../lib/custody.js";
+import { bridgeContract, isProcessed, lbcTxidToBytes32, lookupBurn } from "../lib/eth.js";
+import { handle, HttpError, optionalString } from "../lib/http.js";
+import { parseEthAddress } from "./wrap.js";
+import { parseBurnTxid } from "./unwrap.js";
 
 const LBC_TXID = /^[0-9a-fA-F]{64}$/;
 
-export const main = handle(['GET'], async (request) => {
+export const main = handle(["GET"], async (request) => {
   const env = loadEnv();
-  const burnTxid = optionalString(request.params, 'burnTxid');
-  const ethAddress = optionalString(request.params, 'ethAddress');
-  const lbcTxid = optionalString(request.params, 'lbcTxid');
+  const burnTxid = optionalString(request.params, "burnTxid");
+  const ethAddress = optionalString(request.params, "ethAddress");
+  const lbcTxid = optionalString(request.params, "lbcTxid");
 
   if (burnTxid) return unwrapStatus(env, parseBurnTxid(burnTxid));
   if (ethAddress && lbcTxid) {
-    if (!LBC_TXID.test(lbcTxid)) throw new HttpError(400, 'lbcTxid is malformed');
+    if (!LBC_TXID.test(lbcTxid)) throw new HttpError(400, "lbcTxid is malformed");
     return wrapStatus(env, parseEthAddress(ethAddress), lbcTxid.toLowerCase());
   }
   if (ethAddress) return depositsStatus(env, parseEthAddress(ethAddress));
-  throw new HttpError(400, 'Provide ethAddress, ethAddress and lbcTxid, or burnTxid');
+  throw new HttpError(400, "Provide ethAddress, ethAddress and lbcTxid, or burnTxid");
 });
 
 /** What the Wrap page polls: every deposit to the user's address and where each one stands. */
@@ -48,7 +48,7 @@ async function depositsStatus(env: ReturnType<typeof loadEnv>, ethAddress: strin
     console.warn(warning);
   }
   return {
-    kind: 'deposits',
+    kind: "deposits",
     ethAddress,
     depositAddress,
     minConfirmations: env.lbcMinConfirmations,
@@ -58,7 +58,7 @@ async function depositsStatus(env: ReturnType<typeof loadEnv>, ethAddress: strin
       amount: d.amount,
       confirmations: d.confirmations,
       minted: minted[i],
-      status: minted[i] ? 'minted' : d.confirmations >= env.lbcMinConfirmations ? 'ready' : 'pending',
+      status: minted[i] ? "minted" : d.confirmations >= env.lbcMinConfirmations ? "ready" : "pending",
     })),
   };
 }
@@ -70,9 +70,17 @@ async function wrapStatus(env: ReturnType<typeof loadEnv>, ethAddress: string, l
     LbcChain.with(env, (chain) => chain.getDeposit(depositAddress, lbcTxid)),
     isProcessed(env, lbcTxidToBytes32(lbcTxid)),
   ]);
-  const status = processed ? 'minted' : !deposit ? 'not_found' : deposit.amount === 0n ? 'no_payment' : deposit.confirmations >= env.lbcMinConfirmations ? 'confirmed' : 'pending';
+  const status = processed
+    ? "minted"
+    : !deposit
+      ? "not_found"
+      : deposit.amount === 0n
+        ? "no_payment"
+        : deposit.confirmations >= env.lbcMinConfirmations
+          ? "confirmed"
+          : "pending";
   return {
-    kind: 'wrap',
+    kind: "wrap",
     status,
     ethAddress,
     depositAddress,
@@ -86,8 +94,8 @@ async function wrapStatus(env: ReturnType<typeof loadEnv>, ethAddress: string, l
 
 async function unwrapStatus(env: ReturnType<typeof loadEnv>, burnTxid: string) {
   const burn = await lookupBurn(env, burnTxid);
-  if (!burn.found) return { kind: 'unwrap', status: 'not_found', burnTxid };
-  if (burn.reverted) return { kind: 'unwrap', status: 'reverted', burnTxid };
+  if (!burn.found) return { kind: "unwrap", status: "not_found", burnTxid };
+  if (burn.reverted) return { kind: "unwrap", status: "reverted", burnTxid };
   const custody = new Custody(requireMnemonic(), env.lbcNetwork);
   const treasuryAddress = custody.treasuryAddress();
   const payouts = await LbcChain.with(env, async (chain) =>
@@ -98,7 +106,7 @@ async function unwrapStatus(env: ReturnType<typeof loadEnv>, burnTxid: string) {
           id: event.id,
           lbcAddress: event.lbcAddress,
           amount: event.amount,
-          status: payout ? 'paid' : burn.confirmations >= env.ethMinConfirmations ? 'ready' : 'pending',
+          status: payout ? "paid" : burn.confirmations >= env.ethMinConfirmations ? "ready" : "pending",
           lbcTxid: payout?.txid,
           lbcConfirmations: payout?.confirmations,
         };
@@ -106,8 +114,15 @@ async function unwrapStatus(env: ReturnType<typeof loadEnv>, burnTxid: string) {
     ),
   );
   return {
-    kind: 'unwrap',
-    status: burn.events.length === 0 ? 'no_unwrap_event' : payouts.every((p) => p.status === 'paid') ? 'paid' : burn.confirmations >= env.ethMinConfirmations ? 'ready' : 'pending',
+    kind: "unwrap",
+    status:
+      burn.events.length === 0
+        ? "no_unwrap_event"
+        : payouts.every((p) => p.status === "paid")
+          ? "paid"
+          : burn.confirmations >= env.ethMinConfirmations
+            ? "ready"
+            : "pending",
     burnTxid,
     confirmations: burn.confirmations,
     minConfirmations: env.ethMinConfirmations,

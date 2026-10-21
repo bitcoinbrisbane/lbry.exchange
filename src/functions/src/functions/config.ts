@@ -2,12 +2,12 @@
  * GET .../bridge/config — the public parameters a client needs: chain, contract
  * addresses, confirmation thresholds, the on-chain signer and the treasury.
  */
-import { loadEnv, requireMnemonic } from '../lib/config.js';
-import { Custody } from '../lib/custody.js';
-import { onChainSigner } from '../lib/eth.js';
-import { handle } from '../lib/http.js';
+import { loadEnv, requireMnemonic } from "../lib/config.js";
+import { Custody } from "../lib/custody.js";
+import { onChainSigner } from "../lib/eth.js";
+import { handle } from "../lib/http.js";
 
-export const main = handle(['GET'], async () => {
+export const main = handle(["GET"], async () => {
   const env = loadEnv();
   const custody = new Custody(requireMnemonic(), env.lbcNetwork);
   let signer: string | null = null;

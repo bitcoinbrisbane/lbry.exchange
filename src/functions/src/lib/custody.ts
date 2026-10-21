@@ -1,8 +1,8 @@
-import type { HDKey } from '@scure/bip32';
-import { getAddress } from 'ethers';
-import { addressFromPublicKey } from './lbc/address.js';
-import { deriveAccountKey, derivePrivateKey, CHAIN_RECEIVE } from './lbc/keys/hd.js';
-import type { NetworkParams } from './lbc/networks.js';
+import type { HDKey } from "@scure/bip32";
+import { getAddress } from "ethers";
+import { addressFromPublicKey } from "./lbc/address.js";
+import { deriveAccountKey, derivePrivateKey, CHAIN_RECEIVE } from "./lbc/keys/hd.js";
+import type { NetworkParams } from "./lbc/networks.js";
 
 /**
  * Key management for the custodial side of the bridge. Everything is derived
@@ -51,8 +51,8 @@ export class Custody {
     mnemonic: string,
     readonly network: NetworkParams,
   ) {
-    this.account = deriveAccountKey(mnemonic, 'bip44', network, { accountIndex: 0 });
-    this.treasuryAccount = deriveAccountKey(mnemonic, 'bip44', network, { accountIndex: TREASURY_ACCOUNT });
+    this.account = deriveAccountKey(mnemonic, "bip44", network, { accountIndex: 0 });
+    this.treasuryAccount = deriveAccountKey(mnemonic, "bip44", network, { accountIndex: TREASURY_ACCOUNT });
   }
 
   /** Child indexes below the account key for an Ethereum address's deposit address. */
@@ -62,7 +62,7 @@ export class Custody {
 
   /** Human-readable derivation path of a deposit address. */
   depositPath(ethAddress: string): string {
-    return `m/44'/${this.network.coinType}'/0'/${this.depositIndexes(ethAddress).join('/')}`;
+    return `m/44'/${this.network.coinType}'/0'/${this.depositIndexes(ethAddress).join("/")}`;
   }
 
   private depositKey(ethAddress: string): HDKey {
@@ -72,20 +72,20 @@ export class Custody {
   /** The LBC address a user must send to in order to mint wLBC to `ethAddress`. */
   depositAddress(ethAddress: string): string {
     const publicKey = this.depositKey(ethAddress).publicKey;
-    if (!publicKey) throw new Error('derivation failed');
+    if (!publicKey) throw new Error("derivation failed");
     return addressFromPublicKey(publicKey, this.network);
   }
 
   /** Private key of a deposit address (for sweeping). Caller must wipe the result. */
   depositPrivateKey(ethAddress: string): Uint8Array {
     const key = this.depositKey(ethAddress).privateKey;
-    if (!key) throw new Error('account key has no private key');
+    if (!key) throw new Error("account key has no private key");
     return key.slice();
   }
 
   treasuryAddress(): string {
     const publicKey = this.treasuryAccount.deriveChild(CHAIN_RECEIVE).deriveChild(0).publicKey;
-    if (!publicKey) throw new Error('derivation failed');
+    if (!publicKey) throw new Error("derivation failed");
     return addressFromPublicKey(publicKey, this.network);
   }
 

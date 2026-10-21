@@ -27,10 +27,7 @@ export function useTotalSupply() {
 
       try {
         const token = new ethers.Contract(WLBC_ADDRESS, ERC20_ABI, provider);
-        const [supply, decimals] = await Promise.all([
-          token.totalSupply(),
-          token.decimals(),
-        ]);
+        const [supply, decimals] = await Promise.all([token.totalSupply(), token.decimals()]);
         if (cancelled) return;
         setTotalSupply(Number(ethers.formatUnits(supply, decimals)));
         setError(null);

@@ -1,5 +1,4 @@
 const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
-const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
@@ -46,10 +45,7 @@ describe("Bridge", function () {
 
     it("reverts if deployed with the zero token address", async function () {
       const Bridge = await ethers.getContractFactory("Bridge");
-      await expect(Bridge.deploy(ethers.ZeroAddress)).to.be.revertedWithCustomError(
-        Bridge,
-        "ZeroAddress"
-      );
+      await expect(Bridge.deploy(ethers.ZeroAddress)).to.be.revertedWithCustomError(Bridge, "ZeroAddress");
     });
   });
 
@@ -80,9 +76,10 @@ describe("Bridge", function () {
       const { bridge, user, other } = await loadFixture(deployFixture);
       const sig = await signWrap(bridge, other, user.address, AMOUNT, LBC_TXID);
 
-      await expect(
-        bridge.connect(user).wrap(user.address, AMOUNT, LBC_TXID, sig)
-      ).to.be.revertedWithCustomError(bridge, "InvalidSignature");
+      await expect(bridge.connect(user).wrap(user.address, AMOUNT, LBC_TXID, sig)).to.be.revertedWithCustomError(
+        bridge,
+        "InvalidSignature",
+      );
     });
 
     it("rejects tampered params (signature is bound to to/amount/txid)", async function () {
@@ -90,9 +87,10 @@ describe("Bridge", function () {
       const sig = await signWrap(bridge, owner, user.address, AMOUNT, LBC_TXID);
 
       // Same signature, inflated amount -> hash differs -> invalid.
-      await expect(
-        bridge.connect(user).wrap(user.address, AMOUNT + 1n, LBC_TXID, sig)
-      ).to.be.revertedWithCustomError(bridge, "InvalidSignature");
+      await expect(bridge.connect(user).wrap(user.address, AMOUNT + 1n, LBC_TXID, sig)).to.be.revertedWithCustomError(
+        bridge,
+        "InvalidSignature",
+      );
     });
 
     it("is idempotent: the same lbcTxid cannot be minted twice", async function () {
@@ -112,13 +110,14 @@ describe("Bridge", function () {
       const { bridge, owner, user } = await loadFixture(deployFixture);
 
       const zeroAmtSig = await signWrap(bridge, owner, user.address, 0n, LBC_TXID);
-      await expect(
-        bridge.connect(user).wrap(user.address, 0n, LBC_TXID, zeroAmtSig)
-      ).to.be.revertedWithCustomError(bridge, "ZeroAmount");
+      await expect(bridge.connect(user).wrap(user.address, 0n, LBC_TXID, zeroAmtSig)).to.be.revertedWithCustomError(
+        bridge,
+        "ZeroAmount",
+      );
 
       const zeroToSig = await signWrap(bridge, owner, ethers.ZeroAddress, AMOUNT, LBC_TXID);
       await expect(
-        bridge.connect(user).wrap(ethers.ZeroAddress, AMOUNT, LBC_TXID, zeroToSig)
+        bridge.connect(user).wrap(ethers.ZeroAddress, AMOUNT, LBC_TXID, zeroToSig),
       ).to.be.revertedWithCustomError(bridge, "ZeroAddress");
     });
 
@@ -128,16 +127,14 @@ describe("Bridge", function () {
       // Old signer no longer works.
       const oldSig = await signWrap(bridge, owner, user.address, AMOUNT, LBC_TXID);
       await bridge.connect(owner).setSigner(newSigner.address);
-      await expect(
-        bridge.connect(user).wrap(user.address, AMOUNT, LBC_TXID, oldSig)
-      ).to.be.revertedWithCustomError(bridge, "InvalidSignature");
+      await expect(bridge.connect(user).wrap(user.address, AMOUNT, LBC_TXID, oldSig)).to.be.revertedWithCustomError(
+        bridge,
+        "InvalidSignature",
+      );
 
       // New signer works.
       const newSig = await signWrap(bridge, newSigner, user.address, AMOUNT, LBC_TXID);
-      await expect(bridge.connect(user).wrap(user.address, AMOUNT, LBC_TXID, newSig)).to.emit(
-        bridge,
-        "Wrapped"
-      );
+      await expect(bridge.connect(user).wrap(user.address, AMOUNT, LBC_TXID, newSig)).to.emit(bridge, "Wrapped");
     });
   });
 
@@ -172,53 +169,48 @@ describe("Bridge", function () {
 
     it("reverts when burning more than the balance", async function () {
       const { token, bridge, user } = await withBalance();
-      await expect(
-        bridge.connect(user).unwrap(AMOUNT + 1n, LBC_ADDRESS)
-      ).to.be.revertedWithCustomError(token, "ERC20InsufficientBalance");
+      await expect(bridge.connect(user).unwrap(AMOUNT + 1n, LBC_ADDRESS)).to.be.revertedWithCustomError(
+        token,
+        "ERC20InsufficientBalance",
+      );
     });
 
     it("rejects zero amount and empty LBC address", async function () {
       const { bridge, user } = await withBalance();
-      await expect(
-        bridge.connect(user).unwrap(0n, LBC_ADDRESS)
-      ).to.be.revertedWithCustomError(bridge, "ZeroAmount");
-      await expect(
-        bridge.connect(user).unwrap(AMOUNT, "")
-      ).to.be.revertedWithCustomError(bridge, "EmptyLbcAddress");
+      await expect(bridge.connect(user).unwrap(0n, LBC_ADDRESS)).to.be.revertedWithCustomError(bridge, "ZeroAmount");
+      await expect(bridge.connect(user).unwrap(AMOUNT, "")).to.be.revertedWithCustomError(bridge, "EmptyLbcAddress");
     });
   });
 
   describe("Access control", function () {
     it("only the bridge can mint or burn the token", async function () {
       const { token, user } = await loadFixture(deployFixture);
-      await expect(token.connect(user).mint(user.address, AMOUNT)).to.be.revertedWithCustomError(
-        token,
-        "NotBridge"
-      );
-      await expect(token.connect(user).burn(user.address, AMOUNT)).to.be.revertedWithCustomError(
-        token,
-        "NotBridge"
-      );
+      await expect(token.connect(user).mint(user.address, AMOUNT)).to.be.revertedWithCustomError(token, "NotBridge");
+      await expect(token.connect(user).burn(user.address, AMOUNT)).to.be.revertedWithCustomError(token, "NotBridge");
     });
 
     it("only the owner can set the bridge or rotate the signer", async function () {
       const { token, bridge, user } = await loadFixture(deployFixture);
-      await expect(
-        token.connect(user).setBridge(user.address)
-      ).to.be.revertedWithCustomError(token, "OwnableUnauthorizedAccount");
-      await expect(
-        bridge.connect(user).setSigner(user.address)
-      ).to.be.revertedWithCustomError(bridge, "OwnableUnauthorizedAccount");
+      await expect(token.connect(user).setBridge(user.address)).to.be.revertedWithCustomError(
+        token,
+        "OwnableUnauthorizedAccount",
+      );
+      await expect(bridge.connect(user).setSigner(user.address)).to.be.revertedWithCustomError(
+        bridge,
+        "OwnableUnauthorizedAccount",
+      );
     });
 
     it("setBridge and setSigner reject the zero address", async function () {
       const { token, bridge, owner } = await loadFixture(deployFixture);
-      await expect(
-        token.connect(owner).setBridge(ethers.ZeroAddress)
-      ).to.be.revertedWithCustomError(token, "ZeroAddress");
-      await expect(
-        bridge.connect(owner).setSigner(ethers.ZeroAddress)
-      ).to.be.revertedWithCustomError(bridge, "ZeroAddress");
+      await expect(token.connect(owner).setBridge(ethers.ZeroAddress)).to.be.revertedWithCustomError(
+        token,
+        "ZeroAddress",
+      );
+      await expect(bridge.connect(owner).setSigner(ethers.ZeroAddress)).to.be.revertedWithCustomError(
+        bridge,
+        "ZeroAddress",
+      );
     });
   });
 });

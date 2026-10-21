@@ -1,11 +1,11 @@
-import { addressToScript, scriptToAddress } from './lbc/address.js';
-import type { ChainBackend } from './lbc/net/backend.js';
-import { HubBackend } from './lbc/net/hub.js';
-import { nodeLineTransport } from './lbc/node/index.js';
-import type { Utxo } from './lbc/tx/builder.js';
-import { Transaction } from './lbc/tx/transaction.js';
-import type { BridgeEnv } from './config.js';
-import { markerFromTransaction, sameMarker, type UnwrapMarker } from './marker.js';
+import { addressToScript, scriptToAddress } from "./lbc/address.js";
+import type { ChainBackend } from "./lbc/net/backend.js";
+import { HubBackend } from "./lbc/net/hub.js";
+import { nodeLineTransport } from "./lbc/node/index.js";
+import type { Utxo } from "./lbc/tx/builder.js";
+import { Transaction } from "./lbc/tx/transaction.js";
+import type { BridgeEnv } from "./config.js";
+import { markerFromTransaction, sameMarker, type UnwrapMarker } from "./marker.js";
 
 /** A transaction's payments to one address. */
 export interface DepositInfo {
@@ -25,7 +25,7 @@ export interface PayoutInfo {
   marker: UnwrapMarker;
 }
 
-const CLIENT_NAME = 'lbry.exchange bridge';
+const CLIENT_NAME = "lbry.exchange bridge";
 
 /**
  * Short-lived LBRY hub session for one function invocation. Wraps the wallet's
@@ -35,7 +35,7 @@ const CLIENT_NAME = 'lbry.exchange bridge';
 export class LbcChain {
   /** `hub` is injectable so the coin logic can be tested against a fake backend. */
   constructor(
-    private readonly env: Pick<BridgeEnv, 'lbcNetwork'>,
+    private readonly env: Pick<BridgeEnv, "lbcNetwork">,
     private readonly hub: ChainBackend,
   ) {}
 
@@ -47,7 +47,8 @@ export class LbcChain {
       transportFactory: (endpoint) => nodeLineTransport(endpoint, { connectTimeoutMs: 5_000 }),
       connectTimeoutMs: 5_000,
       requestTimeoutMs: 20_000,
-      log: (level, message) => (level === 'info' ? console.log : level === 'warn' ? console.warn : console.error)(`[hub] ${message}`),
+      log: (level, message) =>
+        (level === "info" ? console.log : level === "warn" ? console.warn : console.error)(`[hub] ${message}`),
     });
   }
 
@@ -56,7 +57,7 @@ export class LbcChain {
     const hub = LbcChain.hubBackend(env);
     const chain = new LbcChain(env, hub);
     try {
-      await withTimeout(hub.start(), connectTimeoutMs, 'No LBRY hub answered in time');
+      await withTimeout(hub.start(), connectTimeoutMs, "No LBRY hub answered in time");
       return await fn(chain);
     } finally {
       await hub.stop();
@@ -81,7 +82,8 @@ export class LbcChain {
     if (!found) return null;
     const tipHeight = await this.tipHeight();
     let amount = 0n;
-    for (const output of found.tx.outputs) if (scriptToAddress(output.script, this.env.lbcNetwork) === address) amount += output.value;
+    for (const output of found.tx.outputs)
+      if (scriptToAddress(output.script, this.env.lbcNetwork) === address) amount += output.value;
     return { txid, amount, height: found.height, confirmations: confirmationsAt(found.height, tipHeight), tipHeight };
   }
 
@@ -94,13 +96,17 @@ export class LbcChain {
     const tipHeight = await this.tipHeight();
     const network = this.env.lbcNetwork;
     const owned = new Set<string>();
-    for (const { tx } of txs) tx.outputs.forEach((o, vout) => scriptToAddress(o.script, network) === address && owned.add(`${tx.txid}:${vout}`));
+    for (const { tx } of txs)
+      tx.outputs.forEach(
+        (o, vout) => scriptToAddress(o.script, network) === address && owned.add(`${tx.txid}:${vout}`),
+      );
     const deposits: DepositInfo[] = [];
     for (const { tx, height } of txs) {
       if (tx.inputs.some((i) => owned.has(`${i.txid}:${i.vout}`))) continue;
       let amount = 0n;
       for (const o of tx.outputs) if (scriptToAddress(o.script, network) === address) amount += o.value;
-      if (amount > 0n) deposits.push({ txid: tx.txid, amount, height, confirmations: confirmationsAt(height, tipHeight), tipHeight });
+      if (amount > 0n)
+        deposits.push({ txid: tx.txid, amount, height, confirmations: confirmationsAt(height, tipHeight), tipHeight });
     }
     // Mempool (height 0) first, then by descending height.
     return deposits.sort((a, b) => (a.height === 0 ? -1 : b.height === 0 ? 1 : b.height - a.height));
@@ -133,7 +139,14 @@ export class LbcChain {
     for (const { tx, height } of txs) {
       tx.outputs.forEach((output, vout) => {
         if (scriptToAddress(output.script, network) === address) {
-          utxos.set(`${tx.txid}:${vout}`, { txid: tx.txid, vout, value: output.value, script: output.script, address, height });
+          utxos.set(`${tx.txid}:${vout}`, {
+            txid: tx.txid,
+            vout,
+            value: output.value,
+            script: output.script,
+            address,
+            height,
+          });
         }
       });
     }
@@ -147,7 +160,8 @@ export class LbcChain {
     const tipHeight = await this.tipHeight();
     for (const { tx, height } of txs) {
       const found = markerFromTransaction(tx);
-      if (found && sameMarker(found, marker)) return { txid: tx.txid, height, confirmations: confirmationsAt(height, tipHeight), marker: found };
+      if (found && sameMarker(found, marker))
+        return { txid: tx.txid, height, confirmations: confirmationsAt(height, tipHeight), marker: found };
     }
     return null;
   }
@@ -155,7 +169,8 @@ export class LbcChain {
   /** Broadcasts and returns the txid (computed locally when the hub reports it already had it). */
   async broadcast(tx: Transaction): Promise<string> {
     const reported = await this.hub.broadcast(tx.toHex());
-    if (reported && reported !== tx.txid) throw new Error(`hub reported txid ${reported} for a transaction hashing to ${tx.txid}`);
+    if (reported && reported !== tx.txid)
+      throw new Error(`hub reported txid ${reported} for a transaction hashing to ${tx.txid}`);
     return tx.txid;
   }
 

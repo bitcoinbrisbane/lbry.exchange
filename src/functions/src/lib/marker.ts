@@ -1,6 +1,6 @@
-import { concatBytes, equalBytes, fromHex, toHex, utf8Encode } from './lbc/encoding/bytes.js';
-import { decompile, nullDataScript, OP } from './lbc/script/script.js';
-import type { Transaction } from './lbc/tx/transaction.js';
+import { concatBytes, equalBytes, fromHex, toHex, utf8Encode } from "./lbc/encoding/bytes.js";
+import { decompile, nullDataScript, OP } from "./lbc/script/script.js";
+import type { Transaction } from "./lbc/tx/transaction.js";
 
 /**
  * Every LBC payout for an unwrap carries an OP_RETURN output tagging which burn
@@ -8,7 +8,7 @@ import type { Transaction } from './lbc/tx/transaction.js';
  * treasury's own history on the LBRY chain is therefore the ledger of what has
  * been paid, and the unwrap function stays idempotent without a database.
  */
-export const MARKER_PREFIX = utf8Encode('wLBC');
+export const MARKER_PREFIX = utf8Encode("wLBC");
 export const MARKER_SIZE = MARKER_PREFIX.length + 32 + 8;
 
 export interface UnwrapMarker {
@@ -20,13 +20,13 @@ export interface UnwrapMarker {
 /** Lower-case 0x-prefixed 32-byte hash, or throws. */
 export function normalizeEthTxid(txid: string): string {
   const text = txid.trim().toLowerCase();
-  const hex = text.startsWith('0x') ? text.slice(2) : text;
-  if (!/^[0-9a-f]{64}$/.test(hex)) throw new Error('Transaction hash must be 32 bytes of hex');
+  const hex = text.startsWith("0x") ? text.slice(2) : text;
+  if (!/^[0-9a-f]{64}$/.test(hex)) throw new Error("Transaction hash must be 32 bytes of hex");
   return `0x${hex}`;
 }
 
 export function encodeUnwrapMarker(marker: UnwrapMarker): Uint8Array {
-  if (marker.unwrapId < 0n || marker.unwrapId > 0xffffffffffffffffn) throw new RangeError('unwrap id out of range');
+  if (marker.unwrapId < 0n || marker.unwrapId > 0xffffffffffffffffn) throw new RangeError("unwrap id out of range");
   const id = new Uint8Array(8);
   let v = marker.unwrapId;
   for (let i = 7; i >= 0; i--) {

@@ -1,18 +1,27 @@
-import { Contract, Interface, JsonRpcProvider, Wallet, getBytes, solidityPackedKeccak256, type Log, type TransactionReceipt } from 'ethers';
-import type { BridgeEnv } from './config.js';
-import { normalizeEthTxid } from './marker.js';
+import {
+  Contract,
+  Interface,
+  JsonRpcProvider,
+  Wallet,
+  getBytes,
+  solidityPackedKeccak256,
+  type Log,
+  type TransactionReceipt,
+} from "ethers";
+import type { BridgeEnv } from "./config.js";
+import { normalizeEthTxid } from "./marker.js";
 
 /** The slice of contracts/Bridge.sol the functions use. */
 export const BRIDGE_ABI = [
-  'function signer() view returns (address)',
-  'function token() view returns (address)',
-  'function processed(bytes32 lbcTxid) view returns (bool)',
-  'function unwrapCount() view returns (uint256)',
-  'function wrapMessageHash(address to, uint256 amount, bytes32 lbcTxid) view returns (bytes32)',
-  'function wrap(address to, uint256 amount, bytes32 lbcTxid, bytes signature)',
-  'function unwrap(uint256 amount, string lbcAddress)',
-  'event Wrapped(address indexed to, uint256 amount, bytes32 indexed lbcTxid)',
-  'event Unwrap(uint256 indexed id, address indexed from, uint256 amount, string lbcAddress)',
+  "function signer() view returns (address)",
+  "function token() view returns (address)",
+  "function processed(bytes32 lbcTxid) view returns (bool)",
+  "function unwrapCount() view returns (uint256)",
+  "function wrapMessageHash(address to, uint256 amount, bytes32 lbcTxid) view returns (bytes32)",
+  "function wrap(address to, uint256 amount, bytes32 lbcTxid, bytes signature)",
+  "function unwrap(uint256 amount, string lbcAddress)",
+  "event Wrapped(address indexed to, uint256 amount, bytes32 indexed lbcTxid)",
+  "event Unwrap(uint256 indexed id, address indexed from, uint256 amount, string lbcAddress)",
 ];
 
 const bridgeInterface = new Interface(BRIDGE_ABI);
@@ -27,19 +36,23 @@ export function bridgeContract(env: BridgeEnv, rpc = provider(env)): Contract {
 }
 
 /** Bridge.processed(lbcTxid): whether a deposit has already been minted. */
-export async function isProcessed(env: BridgeEnv, lbcTxidBytes32: string, contract = bridgeContract(env)): Promise<boolean> {
-  return Boolean(await contract.getFunction('processed').staticCall(lbcTxidBytes32));
+export async function isProcessed(
+  env: BridgeEnv,
+  lbcTxidBytes32: string,
+  contract = bridgeContract(env),
+): Promise<boolean> {
+  return Boolean(await contract.getFunction("processed").staticCall(lbcTxidBytes32));
 }
 
 /** Bridge.signer(): the key whose approvals the contract accepts. */
 export async function onChainSigner(env: BridgeEnv, contract = bridgeContract(env)): Promise<string> {
-  return String(await contract.getFunction('signer').staticCall());
+  return String(await contract.getFunction("signer").staticCall());
 }
 
 /** An LBC transaction id (display hex) as the bytes32 the contract keys on. */
 export function lbcTxidToBytes32(txid: string): string {
   const hex = txid.trim().toLowerCase();
-  if (!/^[0-9a-f]{64}$/.test(hex)) throw new Error('LBC txid must be 64 hex characters');
+  if (!/^[0-9a-f]{64}$/.test(hex)) throw new Error("LBC txid must be 64 hex characters");
   return `0x${hex}`;
 }
 
@@ -54,11 +67,17 @@ export interface WrapApprovalInput {
 
 /** Reproduces Bridge.wrapMessageHash: keccak256(abi.encodePacked(chainid, bridge, to, amount, lbcTxid)). */
 export function wrapMessageHash(input: WrapApprovalInput): string {
-  return solidityPackedKeccak256(['uint256', 'address', 'address', 'uint256', 'bytes32'], [input.chainId, input.bridgeAddress, input.to, input.amount, input.lbcTxid]);
+  return solidityPackedKeccak256(
+    ["uint256", "address", "address", "uint256", "bytes32"],
+    [input.chainId, input.bridgeAddress, input.to, input.amount, input.lbcTxid],
+  );
 }
 
 /** EIP-191 personal-sign of the wrap hash, as Bridge.wrap verifies with toEthSignedMessageHash. */
-export async function signWrapApproval(signerKey: string, input: WrapApprovalInput): Promise<{ signature: string; signer: string }> {
+export async function signWrapApproval(
+  signerKey: string,
+  input: WrapApprovalInput,
+): Promise<{ signature: string; signer: string }> {
   const wallet = new Wallet(signerKey);
   const signature = await wallet.signMessage(getBytes(wrapMessageHash(input)));
   return { signature, signer: wallet.address };
@@ -93,7 +112,7 @@ export async function lookupBurn(env: BridgeEnv, burnTxid: string, rpc = provide
   };
 }
 
-export function unwrapEvents(receipt: Pick<TransactionReceipt, 'logs'>, bridgeAddress: string): UnwrapEvent[] {
+export function unwrapEvents(receipt: Pick<TransactionReceipt, "logs">, bridgeAddress: string): UnwrapEvent[] {
   const bridge = bridgeAddress.toLowerCase();
   const events: UnwrapEvent[] = [];
   for (const log of receipt.logs as readonly Log[]) {
@@ -104,7 +123,7 @@ export function unwrapEvents(receipt: Pick<TransactionReceipt, 'logs'>, bridgeAd
     } catch {
       continue;
     }
-    if (!parsed || parsed.name !== 'Unwrap') continue;
+    if (!parsed || parsed.name !== "Unwrap") continue;
     events.push({
       id: BigInt(parsed.args.id),
       from: String(parsed.args.from),

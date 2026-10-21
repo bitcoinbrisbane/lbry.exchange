@@ -1,0 +1,14 @@
+node_modules
+dist
+artifacts
+cache
+coverage
+typechain-types
+ignition/deployments
+src/functions/packages
+# Vendored verbatim from the LBC wallet; refreshed from upstream, not reformatted
+src/functions/src/lib/lbc
+*.gpg
+*.lock
+*.md
+*.sol
