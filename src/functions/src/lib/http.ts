@@ -49,18 +49,16 @@ export class Reply {
   ) {}
 }
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+// No CORS headers here: DigitalOcean's web-function gateway adds them itself, and
+// a browser rejects a response that carries Access-Control-Allow-Origin twice.
+// scripts/dev.mjs adds them for local development.
 
 function serialize(value: unknown): string {
   return JSON.stringify(value, (_key, v) => (typeof v === "bigint" ? v.toString() : v));
 }
 
 export function json(statusCode: number, body: unknown): DoResponse {
-  return { statusCode, headers: { ...CORS, "Content-Type": "application/json" }, body: serialize(body) };
+  return { statusCode, headers: { "Content-Type": "application/json" }, body: serialize(body) };
 }
 
 export function parseRequest(args: DoArgs): Request {
@@ -113,7 +111,7 @@ export function handle(allowedMethods: string[], fn: Handler): (args: DoArgs) =>
         ? json(err.status, { error: err.message, ...err.extra })
         : json(400, { error: "Bad request" });
     }
-    if (request.method === "OPTIONS") return { statusCode: 204, headers: CORS, body: "" };
+    if (request.method === "OPTIONS") return { statusCode: 204, headers: {}, body: "" };
     if (!allowedMethods.includes(request.method)) return json(405, { error: `Use ${allowedMethods.join(" or ")}` });
     try {
       const result = await fn(request);
