@@ -85,6 +85,27 @@ export class LbcChain {
     return { txid, amount, height: found.height, confirmations: confirmationsAt(found.height, tipHeight), tipHeight };
   }
 
+  /**
+   * Every payment made to `address`, newest first. The address's own spends
+   * (sweeps, and the change they return) are not deposits and are left out.
+   */
+  async listDeposits(address: string): Promise<DepositInfo[]> {
+    const txs = await this.getHistoryTransactions(address);
+    const tipHeight = await this.tipHeight();
+    const network = this.env.lbcNetwork;
+    const owned = new Set<string>();
+    for (const { tx } of txs) tx.outputs.forEach((o, vout) => scriptToAddress(o.script, network) === address && owned.add(`${tx.txid}:${vout}`));
+    const deposits: DepositInfo[] = [];
+    for (const { tx, height } of txs) {
+      if (tx.inputs.some((i) => owned.has(`${i.txid}:${i.vout}`))) continue;
+      let amount = 0n;
+      for (const o of tx.outputs) if (scriptToAddress(o.script, network) === address) amount += o.value;
+      if (amount > 0n) deposits.push({ txid: tx.txid, amount, height, confirmations: confirmationsAt(height, tipHeight), tipHeight });
+    }
+    // Mempool (height 0) first, then by descending height.
+    return deposits.sort((a, b) => (a.height === 0 ? -1 : b.height === 0 ? 1 : b.height - a.height));
+  }
+
   /** Every transaction in an address's history, confirmed and mempool. */
   private async getHistoryTransactions(address: string): Promise<{ tx: Transaction; height: number }[]> {
     const history = await this.hub.getHistory(address);

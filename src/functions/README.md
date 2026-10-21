@@ -45,7 +45,8 @@ With DO's default prefix `/api/v1/web/bridge/`:
 | `GET wrap?ethAddress=0x…` | Deposit address for an Ethereum address | `{ depositAddress, path, minConfirmations, … }` |
 | `POST wrap { ethAddress, lbcTxid }` | Approve a confirmed deposit | `200 { status: "approved", wrapArgs: { to, amount, lbcTxid, signature } }`, `202` pending, `409` already minted |
 | `POST unwrap { burnTxid }` | Pay out a `Bridge.unwrap` burn | `200 { payouts: [{ id, lbcAddress, amount, status, lbcTxid }] }`, `202` pending, `503` treasury short |
-| `GET status?ethAddress=&lbcTxid=` | Wrap progress | `status: not_found / no_payment / pending / confirmed / minted` |
+| `GET status?ethAddress=` | All deposits for a user (what the Wrap page polls) | `deposits: [{ lbcTxid, amount, confirmations, status: pending / ready / minted }]` |
+| `GET status?ethAddress=&lbcTxid=` | One deposit in detail | `status: not_found / no_payment / pending / confirmed / minted` |
 | `GET status?burnTxid=` | Unwrap progress | `status: not_found / reverted / pending / ready / paid` |
 | `GET config` | Chain ids, addresses, thresholds, treasury | |
 
@@ -65,7 +66,10 @@ npm install
 npm test                # vitest unit tests
 npm run typecheck
 npm run build           # esbuild → packages/bridge/<fn>/index.js (gitignored)
+npm run dev             # build, then serve them at http://localhost:8787/api/v1/web/bridge/<fn>
 ```
+
+For the UI, point `VITE_BRIDGE_API_URL` at `http://localhost:8787/api/v1/web/bridge`.
 
 Deploy with the doctl serverless plugin once the environment is exported:
 

@@ -116,6 +116,23 @@ describe('LbcChain', () => {
     expect(await chain.findPayout(TREASURY, { burnTxid: '0x' + '00'.repeat(32), unwrapId: 3n })).toBeNull();
   });
 
+  it('lists deposits newest first and ignores the address spending its own coins', async () => {
+    const hub = new FakeHub(1000);
+    const first = hub.add(pay([{ address: TREASURY, value: 100n }]), 900);
+    const second = hub.add(pay([{ address: TREASURY, value: 40n }, { address: OTHER, value: 1n }, { address: TREASURY, value: 2n }]), 950);
+    // A sweep: spends the first deposit, returns change. Not a deposit.
+    hub.add(pay([{ address: OTHER, value: 90n }, { address: TREASURY, value: 9n }], [{ txid: first.txid, vout: 0 }]), 960);
+    const mempool = hub.add(pay([{ address: TREASURY, value: 7n }]), 0);
+    const chain = new LbcChain({ lbcNetwork: MAINNET }, hub);
+
+    const deposits = await chain.listDeposits(TREASURY);
+    expect(deposits.map((d) => [d.txid, d.amount, d.confirmations])).toEqual([
+      [mempool.txid, 7n, 0],
+      [second.txid, 42n, 51],
+      [first.txid, 100n, 101],
+    ]);
+  });
+
   it('refuses a hub that returns a transaction with the wrong hash', async () => {
     const hub = new FakeHub(1000);
     const tx = pay([{ address: TREASURY, value: 1n }]);

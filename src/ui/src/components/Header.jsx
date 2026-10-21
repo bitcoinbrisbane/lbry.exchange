@@ -8,6 +8,7 @@ import {
   useColorModeValue
 } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
+import { ConnectWallet } from './ConnectWallet'
 
 
 export function Header() {
@@ -93,6 +94,7 @@ export function Header() {
           >
             Developers
           </Link>
+          <ConnectWallet />
         </HStack>
       </Flex>
     </Box>

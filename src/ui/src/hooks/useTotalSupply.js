@@ -1,22 +1,7 @@
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { WLBC_ADDRESS, ETH_RPC_URL } from "../config/constants";
-
-// Minimal ERC-20 ABI — only what we need to read the circulating wLBC supply.
-const ERC20_ABI = [
-  "function totalSupply() view returns (uint256)",
-  "function decimals() view returns (uint8)",
-];
-
-// Prefer a configured read-only RPC so the supply loads without a wallet;
-// fall back to the injected wallet provider if that's all we have.
-function getReadProvider() {
-  if (ETH_RPC_URL) return new ethers.JsonRpcProvider(ETH_RPC_URL);
-  if (typeof window !== "undefined" && window.ethereum) {
-    return new ethers.BrowserProvider(window.ethereum);
-  }
-  return null;
-}
+import { WLBC_ADDRESS } from "../config/constants";
+import { TOKEN_ABI as ERC20_ABI, getReadProvider } from "../lib/contracts";
 
 export function useTotalSupply() {
   const [totalSupply, setTotalSupply] = useState(null);

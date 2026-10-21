@@ -1,13 +1,14 @@
 /**
  * GET .../bridge/status
  *
- *   ?ethAddress=0x…&lbcTxid=…   a wrap: deposit confirmations and whether it is minted
+ *   ?ethAddress=0x…             every deposit to that user's address: pending / ready / minted
+ *   ?ethAddress=0x…&lbcTxid=…   one deposit in detail
  *   ?burnTxid=0x…               an unwrap: burn confirmations and the LBC payout, if sent
  */
 import { LbcChain } from '../lib/chain.js';
 import { loadEnv, requireMnemonic } from '../lib/config.js';
 import { Custody } from '../lib/custody.js';
-import { isProcessed, lbcTxidToBytes32, lookupBurn } from '../lib/eth.js';
+import { bridgeContract, isProcessed, lbcTxidToBytes32, lookupBurn } from '../lib/eth.js';
 import { handle, HttpError, optionalString } from '../lib/http.js';
 import { parseEthAddress } from './wrap.js';
 import { parseBurnTxid } from './unwrap.js';
@@ -25,8 +26,30 @@ export const main = handle(['GET'], async (request) => {
     if (!LBC_TXID.test(lbcTxid)) throw new HttpError(400, 'lbcTxid is malformed');
     return wrapStatus(env, parseEthAddress(ethAddress), lbcTxid.toLowerCase());
   }
-  throw new HttpError(400, 'Provide burnTxid, or ethAddress and lbcTxid');
+  if (ethAddress) return depositsStatus(env, parseEthAddress(ethAddress));
+  throw new HttpError(400, 'Provide ethAddress, ethAddress and lbcTxid, or burnTxid');
 });
+
+/** What the Wrap page polls: every deposit to the user's address and where each one stands. */
+async function depositsStatus(env: ReturnType<typeof loadEnv>, ethAddress: string) {
+  const custody = new Custody(requireMnemonic(), env.lbcNetwork);
+  const depositAddress = custody.depositAddress(ethAddress);
+  const deposits = await LbcChain.with(env, (chain) => chain.listDeposits(depositAddress));
+  const contract = bridgeContract(env);
+  const minted = await Promise.all(deposits.map((d) => isProcessed(env, lbcTxidToBytes32(d.txid), contract)));
+  return {
+    kind: 'deposits',
+    ethAddress,
+    depositAddress,
+    minConfirmations: env.lbcMinConfirmations,
+    deposits: deposits.map((d, i) => ({
+      lbcTxid: d.txid,
+      amount: d.amount,
+      confirmations: d.confirmations,
+      status: minted[i] ? 'minted' : d.confirmations >= env.lbcMinConfirmations ? 'ready' : 'pending',
+    })),
+  };
+}
 
 async function wrapStatus(env: ReturnType<typeof loadEnv>, ethAddress: string, lbcTxid: string) {
   const custody = new Custody(requireMnemonic(), env.lbcNetwork);
