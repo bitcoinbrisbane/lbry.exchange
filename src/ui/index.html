@@ -16,6 +16,19 @@
     <meta name="color-scheme" content="light dark" />
     <link rel="canonical" href="https://lbc.exchange/" />
 
+    <!-- Apply the saved or system colour mode before first paint (what Chakra's ColorModeScript does). -->
+    <script>
+      (function () {
+        try {
+          var mode =
+            localStorage.getItem("chakra-ui-color-mode") ||
+            (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          document.documentElement.dataset.theme = mode;
+          document.documentElement.style.colorScheme = mode;
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- Icons and install -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />

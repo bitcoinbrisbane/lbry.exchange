@@ -1,17 +1,14 @@
-import "@fontsource/inter/400.css";
-import "@fontsource/inter/500.css";
-import "@fontsource/inter/600.css";
-import "@fontsource/inter/700.css";
-import { ColorModeScript } from "@chakra-ui/react";
+import "@fontsource/inter/latin-400.css";
+import "@fontsource/inter/latin-500.css";
+import "@fontsource/inter/latin-600.css";
+import "@fontsource/inter/latin-700.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { Provider } from "./components/ui/provider";
-import theme from "./theme";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <ColorModeScript initialColorMode={theme.config.initialColorMode} />
     <Provider>
       <App />
     </Provider>
