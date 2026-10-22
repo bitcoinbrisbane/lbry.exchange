@@ -9,19 +9,12 @@
  */
 import { LbcChain } from "../lib/chain.js";
 import { loadEnv, requireMnemonic, requireSignerKey } from "../lib/config.js";
-import { Custody, normalizeEthAddress } from "../lib/custody.js";
+import { Custody } from "../lib/custody.js";
 import { bridgeContract, isProcessed, lbcTxidToBytes32, onChainSigner, signWrapApproval } from "../lib/eth.js";
 import { handle, HttpError, Reply, requireString } from "../lib/http.js";
+import { parseEthAddress } from "../lib/parse.js";
 
 const LBC_TXID = /^[0-9a-fA-F]{64}$/;
-
-export function parseEthAddress(value: string): string {
-  try {
-    return normalizeEthAddress(value);
-  } catch {
-    throw new HttpError(400, "ethAddress is not a valid Ethereum address");
-  }
-}
 
 export const main = handle(["GET", "POST"], async (request) => {
   const env = loadEnv();

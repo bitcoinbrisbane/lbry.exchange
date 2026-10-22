@@ -12,18 +12,11 @@ import { loadEnv, requireMnemonic } from "../lib/config.js";
 import { Custody } from "../lib/custody.js";
 import { lookupBurn, type UnwrapEvent } from "../lib/eth.js";
 import { handle, HttpError, Reply, requireString } from "../lib/http.js";
+import { parseBurnTxid } from "../lib/parse.js";
 import { DUST_THRESHOLD } from "../lib/lbc/networks.js";
 import { InsufficientFundsError, assembleTransaction, selectCoins, signTransaction } from "../lib/lbc/tx/builder.js";
 import { wipe } from "../lib/lbc/encoding/bytes.js";
-import { normalizeEthTxid, unwrapMarkerScript } from "../lib/marker.js";
-
-export function parseBurnTxid(value: string): string {
-  try {
-    return normalizeEthTxid(value);
-  } catch {
-    throw new HttpError(400, "burnTxid is not a valid transaction hash");
-  }
-}
+import { unwrapMarkerScript } from "../lib/marker.js";
 
 type PayoutResult =
   | {

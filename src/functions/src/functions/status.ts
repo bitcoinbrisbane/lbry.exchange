@@ -10,8 +10,7 @@ import { loadEnv, requireMnemonic } from "../lib/config.js";
 import { Custody } from "../lib/custody.js";
 import { bridgeContract, isProcessed, lbcTxidToBytes32, lookupBurn } from "../lib/eth.js";
 import { handle, HttpError, optionalString } from "../lib/http.js";
-import { parseEthAddress } from "./wrap.js";
-import { parseBurnTxid } from "./unwrap.js";
+import { parseBurnTxid, parseEthAddress } from "../lib/parse.js";
 
 const LBC_TXID = /^[0-9a-fA-F]{64}$/;
 
