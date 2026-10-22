@@ -8,6 +8,7 @@ import { LastChecked } from "../components/LastChecked";
 import { ContractDetails } from "../components/ContractDetails";
 import { useWallet } from "../contexts/WalletContext";
 import { useBridgeConfig } from "../hooks/useBridgeConfig";
+import { usePageMeta } from "../hooks/usePageMeta";
 import { usePolling } from "../hooks/usePolling";
 import { bridgeApi, errorOf } from "../lib/bridgeApi";
 import { BRIDGE_ABI, addTokenToWallet, ensureChain, ethTxUrl, getSigner } from "../lib/contracts";
@@ -16,6 +17,12 @@ import { cache } from "../lib/format";
 const POLL_MS = 30_000;
 
 export function Wrap() {
+  usePageMeta({
+    title: "Wrap LBC to wLBC on Ethereum | lbc.exchange",
+    description:
+      "Bridge LBRY Credits (LBC) to Ethereum. Wrap native LBC into wLBC, an ERC-20 token backed 1:1, to hold, trade and use across DeFi, and redeem it for LBC any time.",
+    path: "/",
+  });
   const { address } = useWallet();
   const { config, error: configError } = useBridgeConfig();
   const toast = useToast();

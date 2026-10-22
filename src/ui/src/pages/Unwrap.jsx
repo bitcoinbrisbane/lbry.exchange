@@ -24,6 +24,7 @@ import { Address } from "../components/Address";
 import { ContractDetails } from "../components/ContractDetails";
 import { useWallet } from "../contexts/WalletContext";
 import { useBridgeConfig } from "../hooks/useBridgeConfig";
+import { usePageMeta } from "../hooks/usePageMeta";
 import { usePolling } from "../hooks/usePolling";
 import { bridgeApi } from "../lib/bridgeApi";
 import { BRIDGE_ABI, TOKEN_ABI, ensureChain, ethTxUrl, getReadProvider, getSigner, lbcTxUrl } from "../lib/contracts";
@@ -33,6 +34,12 @@ const POLL_MS = 30_000;
 const COLORS = { paid: "green", ready: "blue", pending: "yellow", not_found: "gray", reverted: "red" };
 
 export function Unwrap() {
+  usePageMeta({
+    title: "Unwrap wLBC to native LBC | lbc.exchange",
+    description:
+      "Redeem wLBC for native LBRY Credits 1:1. Burn wLBC on Ethereum and receive LBC at any LBRY address after 12 confirmations.",
+    path: "/unwrap",
+  });
   const { address } = useWallet();
   const { config } = useBridgeConfig();
   const toast = useToast();
