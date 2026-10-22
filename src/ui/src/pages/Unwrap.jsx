@@ -22,6 +22,7 @@ import {
 import { ethers } from "ethers";
 import { useCallback, useEffect, useState } from "react";
 import { ConnectWallet } from "../components/ConnectWallet";
+import { TokenInfo } from "../components/TokenInfo";
 import { useWallet } from "../contexts/WalletContext";
 import { useBridgeConfig } from "../hooks/useBridgeConfig";
 import { usePolling } from "../hooks/usePolling";
@@ -218,6 +219,8 @@ export function Unwrap() {
             )}
           </Stack>
         )}
+
+        <TokenInfo chainId={config?.chainId} tokenAddress={config?.tokenAddress} />
 
         {address && burns.length > 0 && (
           <VStack align="stretch" spacing={3}>

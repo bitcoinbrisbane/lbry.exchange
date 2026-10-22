@@ -51,3 +51,28 @@ export function ethTxUrl(chainId, hash) {
 
 export const lbcTxUrl = (txid) => `https://explorer.lbry.com/tx/${txid}`;
 export const lbcAddressUrl = (address) => `https://explorer.lbry.com/address/${address}`;
+
+/**
+ * Ask the wallet to track wLBC (EIP-747 wallet_watchAsset). Resolves true when the
+ * user accepts. Wallets that already track the token simply confirm again.
+ */
+export async function addTokenToWallet(tokenAddress) {
+  if (!window.ethereum) throw new Error("No wallet found. Install MetaMask or another browser wallet.");
+  return window.ethereum.request({
+    method: "wallet_watchAsset",
+    params: {
+      type: "ERC20",
+      options: {
+        address: tokenAddress,
+        symbol: "wLBC",
+        decimals: 8,
+        image: `${window.location.origin}/lbry-logo.svg`,
+      },
+    },
+  });
+}
+
+export const ethAddressUrl = (chainId, address) => {
+  const base = EXPLORERS[Number(chainId)];
+  return base ? `${base}/token/${address}` : null;
+};

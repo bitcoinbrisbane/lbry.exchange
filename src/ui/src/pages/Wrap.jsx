@@ -5,11 +5,12 @@ import { ConnectWallet } from "../components/ConnectWallet";
 import { DepositCard } from "../components/DepositCard";
 import { DepositList } from "../components/DepositList";
 import { LastChecked } from "../components/LastChecked";
+import { TokenInfo } from "../components/TokenInfo";
 import { useWallet } from "../contexts/WalletContext";
 import { useBridgeConfig } from "../hooks/useBridgeConfig";
 import { usePolling } from "../hooks/usePolling";
 import { bridgeApi, errorOf } from "../lib/bridgeApi";
-import { BRIDGE_ABI, ensureChain, ethTxUrl, getSigner } from "../lib/contracts";
+import { BRIDGE_ABI, addTokenToWallet, ensureChain, ethTxUrl, getSigner } from "../lib/contracts";
 import { cache } from "../lib/format";
 
 const POLL_MS = 30_000;
@@ -90,6 +91,12 @@ export function Wrap() {
         isClosable: true,
       });
       refresh();
+      // First mint from this wallet: offer to track wLBC, like Aave does after a supply.
+      const key = `token-added:${address.toLowerCase()}`;
+      if (!cache.get(key)) {
+        cache.set(key, true);
+        addTokenToWallet(approval.data.tokenAddress || config?.tokenAddress).catch(() => null);
+      }
     } catch (err) {
       const message = err?.shortMessage || err?.message || String(err);
       toast({ title: "Mint failed", description: message, status: "error", duration: 10000, isClosable: true });
@@ -163,6 +170,7 @@ export function Wrap() {
                 minting={minting}
               />
             </VStack>
+            <TokenInfo chainId={config?.chainId} tokenAddress={config?.tokenAddress} />
             {config && (
               <Text fontSize="sm" color="gray.500">
                 Bridge {config.bridgeAddress} on chain {config.chainId}. Minting is an Ethereum transaction from your
