@@ -154,6 +154,12 @@ export class LbcChain {
     return [...utxos.values()];
   }
 
+  /** Confirmed balance of an address at the current tip (mempool coins excluded). */
+  async confirmedBalance(address: string): Promise<bigint> {
+    const utxos = await this.getUtxos(address);
+    return utxos.filter((u) => u.height > 0).reduce((sum, u) => sum + u.value, 0n);
+  }
+
   /** The treasury transaction that already settled `marker`, if any (mempool counts). */
   async findPayout(treasuryAddress: string, marker: UnwrapMarker): Promise<PayoutInfo | null> {
     const txs = await this.getHistoryTransactions(treasuryAddress);

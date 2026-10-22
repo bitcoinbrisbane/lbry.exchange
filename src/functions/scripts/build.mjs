@@ -4,7 +4,7 @@
 import { build } from "esbuild";
 import { mkdir } from "node:fs/promises";
 
-const FUNCTIONS = ["wrap", "unwrap", "status", "config"];
+const FUNCTIONS = ["wrap", "unwrap", "status", "config", "reserves"];
 
 await Promise.all(
   FUNCTIONS.map(async (name) => {

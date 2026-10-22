@@ -134,3 +134,41 @@ export function unwrapEvents(receipt: Pick<TransactionReceipt, "logs">, bridgeAd
   }
   return events;
 }
+
+const TOKEN_ABI = ["function totalSupply() view returns (uint256)"];
+
+/** wLBC in circulation (8 decimals, so also dewies of LBC owed). */
+export async function tokenSupply(env: BridgeEnv, rpc = provider(env)): Promise<bigint> {
+  const token = new Contract(env.tokenAddress, TOKEN_ABI, rpc);
+  return BigInt(await token.getFunction("totalSupply").staticCall());
+}
+
+/** Public RPCs cap eth_getLogs ranges; 9,000 blocks stays under the common 10,000 limit. */
+const LOG_SPAN = 9_000;
+
+/**
+ * Every Ethereum address that has ever been minted wLBC, from the Bridge's
+ * Wrapped events. Each one owns a deposit address, so this enumerates the
+ * deposit side of the reserves.
+ */
+export async function wrappedRecipients(
+  env: BridgeEnv,
+  rpc = provider(env),
+): Promise<{ recipients: string[]; toBlock: number }> {
+  const topic = bridgeInterface.getEvent("Wrapped")!.topicHash;
+  const toBlock = await rpc.getBlockNumber();
+  const recipients = new Set<string>();
+  for (let from = env.bridgeDeployBlock; from <= toBlock; from += LOG_SPAN) {
+    const logs = await rpc.getLogs({
+      address: env.bridgeAddress,
+      topics: [topic],
+      fromBlock: from,
+      toBlock: Math.min(from + LOG_SPAN - 1, toBlock),
+    });
+    for (const log of logs) {
+      const parsed = bridgeInterface.parseLog({ topics: [...log.topics], data: log.data });
+      if (parsed) recipients.add(String(parsed.args.to));
+    }
+  }
+  return { recipients: [...recipients], toBlock };
+}

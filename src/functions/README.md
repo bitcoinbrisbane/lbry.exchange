@@ -49,6 +49,7 @@ With DO's default prefix `/api/v1/web/bridge/`:
 | `GET status?ethAddress=&lbcTxid=` | One deposit in detail | `status: not_found / no_payment / pending / confirmed / minted` |
 | `GET status?burnTxid=` | Unwrap progress | `status: not_found / reverted / pending / ready / paid` |
 | `GET config` | Chain ids, addresses, thresholds, treasury | |
+| `GET reserves` | Proof of reserves | `{ supply, reserves, backingBps, fullyBacked, merkle: { root, leaves }, xpubs }` |
 
 Amounts are decimal strings in dewies (1e-8 LBC), which is also the wLBC unit.
 

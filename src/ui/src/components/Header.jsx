@@ -34,11 +34,11 @@ export function Header() {
             <Link as={NavLink} to="/unwrap" variant="nav">
               Unwrap
             </Link>
+            <Link as={NavLink} to="/verify" variant="nav">
+              Verify
+            </Link>
             <Link href="https://lbry.com" isExternal variant="nav">
               LBRY.com
-            </Link>
-            <Link href="https://lbry.tech" isExternal variant="nav">
-              Developers
             </Link>
             <HStack spacing={2}>
               <IconButton

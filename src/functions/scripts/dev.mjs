@@ -10,7 +10,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const PORT = Number(process.env.PORT || 8787);
 const PREFIX = "/api/v1/web/bridge/";
-const FUNCTIONS = ["wrap", "unwrap", "status", "config"];
+const FUNCTIONS = ["wrap", "unwrap", "status", "config", "reserves"];
 
 // The DigitalOcean gateway adds these in production; add them here so the browser is happy locally.
 const CORS = {

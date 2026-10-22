@@ -36,3 +36,17 @@ export const MoonIcon = (props) => (
     <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" {...stroke} />
   </Icon>
 );
+
+export const ShieldCheckIcon = (props) => (
+  <Icon viewBox="0 0 24 24" boxSize={5} aria-hidden="true" {...props}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" {...stroke} />
+    <path d="m9 12 2 2 4-4" {...stroke} />
+  </Icon>
+);
+
+export const AlertIcon = (props) => (
+  <Icon viewBox="0 0 24 24" boxSize={5} aria-hidden="true" {...props}>
+    <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" {...stroke} />
+    <path d="M12 9v4M12 17h.01" {...stroke} />
+  </Icon>
+);

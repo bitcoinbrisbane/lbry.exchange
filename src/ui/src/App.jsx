@@ -4,6 +4,7 @@ import { Header } from "./components/Header";
 import { IntroBanner } from "./components/IntroBanner";
 import { PageContainer } from "./components/PageContainer";
 import { Unwrap } from "./pages/Unwrap";
+import { Verify } from "./pages/Verify";
 import { Wrap } from "./pages/Wrap";
 
 export function App() {
@@ -18,6 +19,7 @@ export function App() {
               <Route path="/" element={<Wrap />} />
               <Route path="/wrap" element={<Navigate to="/" replace />} />
               <Route path="/unwrap" element={<Unwrap />} />
+              <Route path="/verify" element={<Verify />} />
             </Routes>
           </VStack>
         </PageContainer>
