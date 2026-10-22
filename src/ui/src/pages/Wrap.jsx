@@ -1,11 +1,11 @@
-import { Alert, AlertIcon, Container, Heading, HStack, Spinner, Text, VStack, useToast } from "@chakra-ui/react";
+import { Alert, AlertIcon, Heading, HStack, Spinner, Text, VStack, useToast } from "@chakra-ui/react";
 import { ethers } from "ethers";
 import { useCallback, useEffect, useState } from "react";
 import { ConnectWallet } from "../components/ConnectWallet";
 import { DepositCard } from "../components/DepositCard";
 import { DepositList } from "../components/DepositList";
 import { LastChecked } from "../components/LastChecked";
-import { TokenInfo } from "../components/TokenInfo";
+import { ContractDetails } from "../components/ContractDetails";
 import { useWallet } from "../contexts/WalletContext";
 import { useBridgeConfig } from "../hooks/useBridgeConfig";
 import { usePolling } from "../hooks/usePolling";
@@ -106,80 +106,77 @@ export function Wrap() {
   };
 
   return (
-    <Container maxW="container.md" py={8}>
-      <VStack spacing={8} align="stretch">
-        <VStack align="stretch" spacing={2}>
-          <Heading as="h1" size="xl">
-            Wrap LBC
-          </Heading>
-          <Text fontSize="lg" color="gray.600">
-            Deposit native LBC and mint wLBC, an ERC-20 backed 1:1, to your wallet.
-          </Text>
-        </VStack>
-
-        {configError && (
-          <Alert status="warning" borderRadius="md">
-            <AlertIcon />
-            {configError}
-          </Alert>
-        )}
-
-        {!address ? (
-          <Alert status="info" borderRadius="md" flexDirection="column" alignItems="flex-start" gap={3}>
-            <HStack>
-              <AlertIcon />
-              <Text>Connect the wallet that should receive the wLBC. Your deposit address is derived from it.</Text>
-            </HStack>
-            <ConnectWallet size="md" />
-          </Alert>
-        ) : depositError ? (
-          <Alert status="error" borderRadius="md">
-            <AlertIcon />
-            {depositError}
-          </Alert>
-        ) : !deposit ? (
-          <HStack>
-            <Spinner size="sm" />
-            <Text>Deriving your deposit address…</Text>
-          </HStack>
-        ) : (
-          <>
-            <DepositCard {...deposit} />
-            <VStack align="stretch" spacing={3}>
-              <HStack justify="space-between" align="center" flexWrap="wrap" gap={2}>
-                <Heading as="h2" size="md">
-                  Deposits
-                </Heading>
-                <LastChecked
-                  updatedAt={statusUpdatedAt}
-                  intervalMs={POLL_MS}
-                  loading={statusLoading}
-                  onRefresh={refresh}
-                />
-              </HStack>
-              {(statusError || status?.warning) && (
-                <Alert status="warning" borderRadius="md" fontSize="sm">
-                  <AlertIcon />
-                  {statusError || status.warning}
-                </Alert>
-              )}
-              <DepositList
-                deposits={status?.deposits}
-                minConfirmations={status?.minConfirmations ?? deposit.minConfirmations}
-                onMint={mint}
-                minting={minting}
-              />
-            </VStack>
-            <TokenInfo chainId={config?.chainId} tokenAddress={config?.tokenAddress} />
-            {config && (
-              <Text fontSize="sm" color="gray.500">
-                Bridge {config.bridgeAddress} on chain {config.chainId}. Minting is an Ethereum transaction from your
-                wallet; you pay the gas.
-              </Text>
-            )}
-          </>
-        )}
+    <VStack spacing={8} align="stretch">
+      <VStack align="stretch" spacing={2}>
+        <Heading as="h1" size="xl">
+          Wrap LBC
+        </Heading>
+        <Text textStyle="lead">
+          Send LBC to your personal deposit address, then mint the same amount of wLBC to your Ethereum wallet.
+        </Text>
       </VStack>
-    </Container>
+
+      {configError && (
+        <Alert status="warning">
+          <AlertIcon />
+          {configError}
+        </Alert>
+      )}
+
+      {!address ? (
+        <Alert status="info" flexDirection="column" alignItems="flex-start" gap={3}>
+          <HStack>
+            <AlertIcon />
+            <Text>Connect the wallet that should receive the wLBC. Your deposit address is derived from it.</Text>
+          </HStack>
+          <ConnectWallet variant="solid" size="md" />
+        </Alert>
+      ) : depositError ? (
+        <Alert status="error">
+          <AlertIcon />
+          {depositError}
+        </Alert>
+      ) : !deposit ? (
+        <HStack>
+          <Spinner size="sm" />
+          <Text>Deriving your deposit address…</Text>
+        </HStack>
+      ) : (
+        <>
+          <DepositCard {...deposit} />
+          <VStack align="stretch" spacing={3}>
+            <HStack justify="space-between" align="center" flexWrap="wrap" gap={2}>
+              <Heading as="h2" size="md">
+                Deposits
+              </Heading>
+              <LastChecked
+                updatedAt={statusUpdatedAt}
+                intervalMs={POLL_MS}
+                loading={statusLoading}
+                onRefresh={refresh}
+              />
+            </HStack>
+            {(statusError || status?.warning) && (
+              <Alert status="warning" fontSize="sm">
+                <AlertIcon />
+                {statusError || status.warning}
+              </Alert>
+            )}
+            <DepositList
+              deposits={status?.deposits}
+              minConfirmations={status?.minConfirmations ?? deposit.minConfirmations}
+              onMint={mint}
+              minting={minting}
+            />
+          </VStack>
+          <ContractDetails
+            chainId={config?.chainId}
+            tokenAddress={config?.tokenAddress}
+            bridgeAddress={config?.bridgeAddress}
+            note={`On chain ${config?.chainId ?? 1}. Minting is an Ethereum transaction from your wallet; you pay the gas.`}
+          />
+        </>
+      )}
+    </VStack>
   );
 }

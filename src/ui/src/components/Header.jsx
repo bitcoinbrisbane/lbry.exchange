@@ -1,61 +1,57 @@
-import { Box, Flex, Text, Image, Link, HStack, useColorModeValue } from "@chakra-ui/react";
-import { Link as RouterLink } from "react-router-dom";
+import { Box, Flex, HStack, IconButton, Link, useColorMode } from "@chakra-ui/react";
+import { NavLink, Link as RouterLink } from "react-router-dom";
 import { ConnectWallet } from "./ConnectWallet";
+import { MoonIcon, SunIcon } from "./icons";
+import { Logo } from "./Logo";
+import { PageContainer } from "./PageContainer";
 
 export function Header() {
-  const bgColor = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
+  const { colorMode, toggleColorMode } = useColorMode();
+  const next = colorMode === "dark" ? "light" : "dark";
 
   return (
     <Box
       as="header"
-      bg={bgColor}
-      borderBottom="1px"
-      borderColor={borderColor}
-      py={4}
-      px={[4, 8]}
+      bg="bg.surface"
+      borderBottomWidth="1px"
+      borderColor="border.default"
+      py={3}
       position="sticky"
       top={0}
       zIndex={10}
     >
-      <Flex
-        maxW="container.xl"
-        mx="auto"
-        justify="space-between"
-        align="center"
-        direction={["column", "row"]}
-        gap={[4, 0]}
-      >
-        <Link as={RouterLink} to="/" _hover={{ textDecoration: "none" }}>
-          <HStack spacing={3}>
-            <Image src="https://lbry.com/img/logo.svg" alt="LBRY" h={["24px", "32px"]} />
-            <Text
-              fontSize={["xl", "2xl"]}
-              fontWeight="bold"
-              bgGradient="linear(to-r, brand.500, brand.800)"
-              bgClip="text"
-            >
-              Exchange
-            </Text>
-          </HStack>
-        </Link>
+      <PageContainer>
+        <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+          <Link as={RouterLink} to="/" aria-label="LBC Exchange home" _hover={{ textDecoration: "none" }}>
+            <Logo />
+          </Link>
 
-        <HStack spacing={[3, 6]}>
-          <Link as={RouterLink} to="/" fontSize={["xs", "sm"]} fontWeight="medium">
-            Wrap
-          </Link>
-          <Link as={RouterLink} to="/unwrap" fontSize={["xs", "sm"]} fontWeight="medium">
-            Unwrap
-          </Link>
-          <Link href="https://lbry.com" isExternal fontSize={["xs", "sm"]} fontWeight="medium">
-            LBRY.com
-          </Link>
-          <Link href="https://lbry.tech" isExternal fontSize={["xs", "sm"]} fontWeight="medium">
-            Developers
-          </Link>
-          <ConnectWallet />
-        </HStack>
-      </Flex>
+          <Flex as="nav" aria-label="Main" align="center" wrap="wrap" gap={{ base: 3, md: 5 }}>
+            {/* NavLink sets aria-current="page" on the active route; the nav variant styles it. */}
+            <Link as={NavLink} to="/" end variant="nav">
+              Wrap
+            </Link>
+            <Link as={NavLink} to="/unwrap" variant="nav">
+              Unwrap
+            </Link>
+            <Link href="https://lbry.com" isExternal variant="nav">
+              LBRY.com
+            </Link>
+            <Link href="https://lbry.tech" isExternal variant="nav">
+              Developers
+            </Link>
+            <HStack spacing={2}>
+              <IconButton
+                variant="ghost"
+                aria-label={`Switch to ${next} mode`}
+                icon={colorMode === "dark" ? <SunIcon /> : <MoonIcon />}
+                onClick={toggleColorMode}
+              />
+              <ConnectWallet />
+            </HStack>
+          </Flex>
+        </Flex>
+      </PageContainer>
     </Box>
   );
 }
