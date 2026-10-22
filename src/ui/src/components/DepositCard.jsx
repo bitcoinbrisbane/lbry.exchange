@@ -14,7 +14,7 @@ export function DepositCard({ depositAddress, minConfirmations, network }) {
         </Box>
         <Stack spacing={3} flex="1" minW={0}>
           <Text fontWeight="semibold">Your LBC deposit address</Text>
-          <Address value={depositAddress} copyable label="deposit address" />
+          <Address value={depositAddress} truncate="mobile" copyable label="deposit address" />
           <Link href={lbcAddressUrl(depositAddress)} isExternal fontSize="sm" alignSelf="flex-start">
             View on explorer
           </Link>

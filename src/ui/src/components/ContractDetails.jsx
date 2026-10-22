@@ -1,4 +1,4 @@
-import { Box, Button, Heading, HStack, Link, Stack, Text, useBreakpointValue, useToast } from "@chakra-ui/react";
+import { Box, Button, Heading, HStack, Link, Stack, Text, useToast } from "@chakra-ui/react";
 import { BRIDGE_ADDRESS, WLBC_ADDRESS } from "../config/constants";
 import { addTokenToWallet, ethAddressUrl, ethContractUrl } from "../lib/contracts";
 import { Address } from "./Address";
@@ -19,7 +19,6 @@ function Row({ label, children }) {
 /** wLBC and Bridge contract addresses, "add to wallet" and a one-line note, in one compact section. */
 export function ContractDetails({ chainId = 1, tokenAddress = WLBC_ADDRESS, bridgeAddress = BRIDGE_ADDRESS, note }) {
   const toast = useToast();
-  const compact = useBreakpointValue({ base: true, md: false });
 
   const add = async () => {
     try {
@@ -39,7 +38,7 @@ export function ContractDetails({ chainId = 1, tokenAddress = WLBC_ADDRESS, brid
       </Heading>
       <Stack spacing={4}>
         <Row label="wLBC token (ERC-20, 8 decimals)">
-          <Address value={tokenAddress} truncate={compact} copyable label="wLBC contract address" />
+          <Address value={tokenAddress} truncate="mobile" copyable label="wLBC contract address" />
           <Button onClick={add}>Add to wallet</Button>
           {tokenUrl && (
             <Link href={tokenUrl} isExternal fontSize="sm">
@@ -48,7 +47,7 @@ export function ContractDetails({ chainId = 1, tokenAddress = WLBC_ADDRESS, brid
           )}
         </Row>
         <Row label="Bridge">
-          <Address value={bridgeAddress} truncate={compact} copyable label="bridge contract address" />
+          <Address value={bridgeAddress} truncate="mobile" copyable label="bridge contract address" />
           {bridgeUrl && (
             <Link href={bridgeUrl} isExternal fontSize="sm">
               Etherscan

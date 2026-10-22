@@ -1,15 +1,18 @@
-import { Box, HStack, IconButton, Link, Tooltip, useClipboard } from "@chakra-ui/react";
+import { Box, HStack, IconButton, Link, Tooltip, useBreakpointValue, useClipboard } from "@chakra-ui/react";
 import { shortHash } from "../lib/format";
 import { CheckIcon, CopyIcon } from "./icons";
 
 /**
  * Every address and hash in the UI: monospace, in a read-only chip, optionally
  * truncated (full value in the tooltip), linked and copyable.
+ * truncate: true always shortens; "mobile" shortens below the md breakpoint only.
  */
 export function Address({ value, truncate = false, copyable = false, href, label = "address", fontSize = "sm" }) {
   const { onCopy, hasCopied } = useClipboard(value || "");
+  const isMobile = useBreakpointValue({ base: true, md: false });
   if (!value) return null;
-  const text = truncate ? shortHash(value, 6, 4) : value;
+  const short = truncate === "mobile" ? isMobile : Boolean(truncate);
+  const text = short ? shortHash(value, 6, 4) : value;
   return (
     <HStack
       as="span"
