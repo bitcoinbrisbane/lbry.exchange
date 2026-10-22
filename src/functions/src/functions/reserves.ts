@@ -19,7 +19,9 @@ export const main = handle(["GET"], async () => {
   const custody = new Custody(requireMnemonic(), env.lbcNetwork);
   const treasuryAddress = custody.treasuryAddress();
 
-  const [supply, { recipients, toBlock: ethBlock }] = await Promise.all([tokenSupply(env), wrappedRecipients(env)]);
+  // Supply is read at the same block the Wrapped scan stops at, so both describe one moment.
+  const { recipients, toBlock: ethBlock } = await wrappedRecipients(env);
+  const supply = await tokenSupply(env, undefined, ethBlock);
   const depositAddresses = [...new Set(recipients.map((eth) => custody.depositAddress(eth)))];
 
   const { lbcHeight, balances } = await LbcChain.with(env, async (chain) => {

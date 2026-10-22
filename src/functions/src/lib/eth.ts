@@ -138,13 +138,31 @@ export function unwrapEvents(receipt: Pick<TransactionReceipt, "logs">, bridgeAd
 const TOKEN_ABI = ["function totalSupply() view returns (uint256)"];
 
 /** wLBC in circulation (8 decimals, so also dewies of LBC owed). */
-export async function tokenSupply(env: BridgeEnv, rpc = provider(env)): Promise<bigint> {
+export async function tokenSupply(env: BridgeEnv, rpc = provider(env), blockTag?: number): Promise<bigint> {
   const token = new Contract(env.tokenAddress, TOKEN_ABI, rpc);
-  return BigInt(await token.getFunction("totalSupply").staticCall());
+  return BigInt(await token.getFunction("totalSupply").staticCall({ blockTag }));
 }
 
 /** Public RPCs cap eth_getLogs ranges; 9,000 blocks stays under the common 10,000 limit. */
 const LOG_SPAN = 9_000;
+/**
+ * Load-balanced public RPCs can answer eth_blockNumber from one node and
+ * eth_getLogs from another a block or two behind, which rejects the range.
+ * Scanning a few blocks short of the head keeps every node in range.
+ */
+const HEAD_LAG = 3;
+
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  for (let i = 1; ; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const text = err instanceof Error ? err.message : String(err);
+      if (i >= attempts || !/beyond current head|header not found|unknown block/i.test(text)) throw err;
+      await new Promise((r) => setTimeout(r, 1000 * i));
+    }
+  }
+}
 
 /**
  * Every Ethereum address that has ever been minted wLBC, from the Bridge's
@@ -156,15 +174,17 @@ export async function wrappedRecipients(
   rpc = provider(env),
 ): Promise<{ recipients: string[]; toBlock: number }> {
   const topic = bridgeInterface.getEvent("Wrapped")!.topicHash;
-  const toBlock = await rpc.getBlockNumber();
+  const toBlock = (await rpc.getBlockNumber()) - HEAD_LAG;
   const recipients = new Set<string>();
   for (let from = env.bridgeDeployBlock; from <= toBlock; from += LOG_SPAN) {
-    const logs = await rpc.getLogs({
-      address: env.bridgeAddress,
-      topics: [topic],
-      fromBlock: from,
-      toBlock: Math.min(from + LOG_SPAN - 1, toBlock),
-    });
+    const logs = await withRetry(() =>
+      rpc.getLogs({
+        address: env.bridgeAddress,
+        topics: [topic],
+        fromBlock: from,
+        toBlock: Math.min(from + LOG_SPAN - 1, toBlock),
+      }),
+    );
     for (const log of logs) {
       const parsed = bridgeInterface.parseLog({ topics: [...log.topics], data: log.data });
       if (parsed) recipients.add(String(parsed.args.to));

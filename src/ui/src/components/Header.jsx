@@ -1,7 +1,7 @@
 import { Box, Flex, HStack, IconButton, Link, useColorMode } from "@chakra-ui/react";
 import { NavLink, Link as RouterLink } from "react-router-dom";
 import { ConnectWallet } from "./ConnectWallet";
-import { MoonIcon, SunIcon } from "./icons";
+import { GitHubIcon, MoonIcon, SunIcon } from "./icons";
 import { Logo } from "./Logo";
 import { PageContainer } from "./PageContainer";
 
@@ -41,6 +41,15 @@ export function Header() {
               LBRY.com
             </Link>
             <HStack spacing={2}>
+              <IconButton
+                as="a"
+                href="https://github.com/bitcoinbrisbane/lbry.exchange"
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="ghost"
+                aria-label="Source code on GitHub (opens in a new tab)"
+                icon={<GitHubIcon />}
+              />
               <IconButton
                 variant="ghost"
                 aria-label={`Switch to ${next} mode`}
