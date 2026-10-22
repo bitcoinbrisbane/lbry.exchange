@@ -4,37 +4,137 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Primary meta -->
-    <title>LBRY Exchange — Wrap LBC to wLBC</title>
+    <!-- Primary meta. Per-route title, description and canonical are updated in src/hooks/usePageMeta.js. -->
+    <title>Wrap LBC to wLBC on Ethereum | lbc.exchange</title>
     <meta
       name="description"
-      content="Wrap native LBC (LBRY Credits) into wLBC, an ERC-20 backed 1:1, and unwrap it back. LBRY does to publishing what Bitcoin did to money."
+      content="Bridge LBRY Credits (LBC) to Ethereum. Wrap native LBC into wLBC, an ERC-20 token backed 1:1, to hold, trade and use across DeFi, and redeem it for LBC any time."
     />
-    <meta name="keywords" content="LBRY, LBC, LBRY Credits, wLBC, wrapped LBC, bridge, LBRY exchange" />
-    <meta name="author" content="LBRY Exchange" />
-    <meta name="theme-color" content="#2F9176" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#23735E" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#171923" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="canonical" href="https://lbc.exchange/" />
 
-    <!-- Icons -->
-    <link rel="icon" type="image/svg+xml" href="/lbry-logo.svg" />
-    <link rel="apple-touch-icon" href="/lbry-logo.svg" />
+    <!-- Apply the saved or system colour mode before first paint (what Chakra's ColorModeScript does). -->
+    <script>
+      (function () {
+        try {
+          var mode =
+            localStorage.getItem("chakra-ui-color-mode") ||
+            (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          document.documentElement.dataset.theme = mode;
+          document.documentElement.style.colorScheme = mode;
+        } catch (e) {}
+      })();
+    </script>
+
+    <!-- Icons and install -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="LBRY Exchange" />
-    <meta property="og:title" content="LBRY Exchange — Wrap LBC to wLBC" />
-    <meta property="og:description" content="Wrap LBC into wLBC 1:1 and unwrap it back on LBRY Exchange." />
+    <meta property="og:site_name" content="lbc.exchange" />
+    <meta property="og:locale" content="en" />
     <meta property="og:url" content="https://lbc.exchange/" />
-    <meta property="og:image" content="https://lbc.exchange/lbry-logo.svg" />
+    <meta property="og:title" content="Bring LBC to Ethereum DeFi | lbc.exchange" />
+    <meta
+      property="og:description"
+      content="Wrap LBRY Credits into wLBC, an ERC-20 backed 1:1 by custodied LBC, the same model as wBTC. Redeem any time."
+    />
+    <meta property="og:image" content="https://lbc.exchange/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="lbc.exchange: Bring LBC to Ethereum DeFi" />
 
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="LBRY Exchange — Wrap LBC to wLBC" />
-    <meta name="twitter:description" content="Wrap LBC into wLBC 1:1 and unwrap it back on LBRY Exchange." />
-    <meta name="twitter:image" content="https://lbc.exchange/lbry-logo.svg" />
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Bring LBC to Ethereum DeFi | lbc.exchange" />
+    <meta
+      name="twitter:description"
+      content="Wrap LBRY Credits into wLBC, an ERC-20 backed 1:1 by custodied LBC, the same model as wBTC. Redeem any time."
+    />
+    <meta name="twitter:image" content="https://lbc.exchange/og-image.png" />
+    <meta name="twitter:image:alt" content="lbc.exchange: Bring LBC to Ethereum DeFi" />
+
+    <!-- Structured data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://lbc.exchange/#website",
+            "url": "https://lbc.exchange/",
+            "name": "lbc.exchange",
+            "description": "A 1:1 bridge between native LBRY Credits (LBC) and wLBC, an ERC-20 token on Ethereum.",
+            "inLanguage": "en"
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://lbc.exchange/#app",
+            "name": "lbc.exchange",
+            "url": "https://lbc.exchange/",
+            "applicationCategory": "FinanceApplication",
+            "operatingSystem": "Any",
+            "browserRequirements": "Requires JavaScript and an Ethereum wallet such as MetaMask",
+            "description": "Wrap LBRY Credits (LBC) into wLBC, an ERC-20 token backed 1:1 by custodied LBC, and unwrap it back to native LBC.",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "isPartOf": { "@id": "https://lbc.exchange/#website" }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is wLBC?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "wLBC is an ERC-20 token on Ethereum backed 1:1 by LBRY Credits (LBC) held in custody, the same model as wBTC for Bitcoin. Contract: 0xB0F2C4f8b7c0f088f7844947EcBf1220bFCa08C1."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How do I wrap LBC?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Connect an Ethereum wallet, send LBC to the personal deposit address shown, and after 6 LBRY confirmations mint the same amount of wLBC to your wallet."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How do I get native LBC back?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "On the Unwrap page, burn wLBC and enter an LBRY address. After 12 Ethereum confirmations the same amount of native LBC is sent to that address."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <!-- Readable without JavaScript, for crawlers and no-JS visitors. -->
+    <noscript>
+      <main style="font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1rem">
+        <h1>Wrap LBC to wLBC on Ethereum</h1>
+        <p>
+          lbc.exchange bridges native LBRY Credits (LBC) to wLBC, an ERC-20 token on Ethereum backed 1:1 by LBC held in
+          custody, the same model as wBTC. Hold it in any Ethereum wallet, trade it on decentralised exchanges, use it
+          across DeFi, and redeem it for native LBC whenever you like.
+        </p>
+        <p>
+          wLBC contract: 0xB0F2C4f8b7c0f088f7844947EcBf1220bFCa08C1. Bridge: 0xa3A3E8304C88b017153bA5dFCCDACCB7116a185f.
+        </p>
+        <p>This app needs JavaScript and an Ethereum wallet.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

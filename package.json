@@ -33,7 +33,7 @@
     "typescript-eslint": "^8.72.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.2.0"
+    "@openzeppelin/contracts": "5.2.0"
   },
   "scripts": {
     "lint": "eslint .",

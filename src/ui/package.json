@@ -2,6 +2,7 @@
   "name": "lbry-exchange-ui",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "engines": {
     "node": ">=24"
   },
@@ -9,19 +10,18 @@
     "@chakra-ui/react": "^2.8.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@fontsource/inter": "5",
     "ethers": "^6.17.0",
-    "framer-motion": "^10.18.0",
+    "framer-motion": "^12",
     "qrcode.react": "^4.2.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^7.18.1",
-    "serve": "^14.2.6"
+    "react": "^19",
+    "react-dom": "^19",
+    "react-router-dom": "^7.18.1"
   },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "start": "serve -s dist"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.3",

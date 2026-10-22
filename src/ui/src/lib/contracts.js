@@ -76,3 +76,8 @@ export const ethAddressUrl = (chainId, address) => {
   const base = EXPLORERS[Number(chainId)];
   return base ? `${base}/token/${address}` : null;
 };
+
+export const ethContractUrl = (chainId, address) => {
+  const base = EXPLORERS[Number(chainId)];
+  return base ? `${base}/address/${address}` : null;
+};

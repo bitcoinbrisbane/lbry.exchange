@@ -83,6 +83,19 @@ export class Custody {
     return key.slice();
   }
 
+  /**
+   * Account extended public keys. Publishing them lets anyone derive every
+   * deposit address and the treasury and check their balances; they reveal
+   * addresses, never keys.
+   */
+  depositXpub(): string {
+    return this.account.publicExtendedKey;
+  }
+
+  treasuryXpub(): string {
+    return this.treasuryAccount.publicExtendedKey;
+  }
+
   treasuryAddress(): string {
     const publicKey = this.treasuryAccount.deriveChild(CHAIN_RECEIVE).deriveChild(0).publicKey;
     if (!publicKey) throw new Error("derivation failed");

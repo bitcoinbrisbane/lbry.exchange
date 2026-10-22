@@ -15,12 +15,14 @@
 #   POST  .../bridge/unwrap  { burnTxid }        pays native LBC for a Bridge.unwrap burn
 #   GET   .../bridge/status  ?ethAddress=&lbcTxid=  |  ?burnTxid=
 #   GET   .../bridge/config
+#   GET   .../bridge/reserves   proof of reserves: supply, balances, Merkle root
 
 environment:
   ETH_RPC_URL: "${ETH_RPC_URL}"
   CHAIN_ID: "${CHAIN_ID}"
   BRIDGE_ADDRESS: "${BRIDGE_ADDRESS}"
   TOKEN_ADDRESS: "${TOKEN_ADDRESS}"
+  BRIDGE_DEPLOY_BLOCK: "${BRIDGE_DEPLOY_BLOCK}"
   ETH_MIN_CONFIRMATIONS: "${ETH_MIN_CONFIRMATIONS}"
   LBC_NETWORK: "${LBC_NETWORK}"
   # LBC_HUBS (host:port,...) is optional: unset, the public Odysee hubs are used.
@@ -73,3 +75,12 @@ packages:
         limits:
           timeout: 10000
           memory: 128
+
+      - name: reserves
+        binary: false
+        main: main
+        runtime: "nodejs:24"
+        web: true
+        limits:
+          timeout: 30000
+          memory: 256

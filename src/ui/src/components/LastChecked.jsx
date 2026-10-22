@@ -10,12 +10,12 @@ export function LastChecked({ updatedAt, intervalMs, loading, onRefresh }) {
   }, []);
   const ago = updatedAt ? Math.max(0, Math.round((Date.now() - updatedAt) / 1000)) : null;
   return (
-    <HStack spacing={3} fontSize="sm" color="gray.500">
-      <Text>
+    <HStack spacing={3}>
+      <Text textStyle="helper" aria-live="polite">
         {loading ? "Checking…" : ago == null ? "Not checked yet" : `Checked ${ago}s ago`} · every{" "}
         {Math.round(intervalMs / 1000)}s
       </Text>
-      <Button size="xs" variant="outline" onClick={onRefresh} isLoading={loading}>
+      <Button onClick={onRefresh} isLoading={loading}>
         Refresh
       </Button>
     </HStack>

@@ -16,6 +16,7 @@ async function call(path, { method = "GET", params, body } = {}) {
 
 export const bridgeApi = {
   config: () => call("config"),
+  reserves: () => call("reserves"),
   depositAddress: (ethAddress) => call("wrap", { params: { ethAddress } }),
   deposits: (ethAddress) => call("status", { params: { ethAddress } }),
   approve: (ethAddress, lbcTxid) => call("wrap", { method: "POST", body: { ethAddress, lbcTxid } }),

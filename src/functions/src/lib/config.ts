@@ -14,6 +14,8 @@ export interface BridgeEnv {
   chainId: number;
   bridgeAddress: string;
   tokenAddress: string;
+  /** Block the Bridge was deployed in; Wrapped event scans start here. */
+  bridgeDeployBlock: number;
   ethMinConfirmations: number;
   lbcNetwork: NetworkParams;
   hubs: HubServer[];
@@ -78,6 +80,7 @@ export function loadEnv(env: Env = process.env): BridgeEnv {
     chainId: integer(env, "CHAIN_ID", undefined, 1),
     bridgeAddress: ethAddress(env, "BRIDGE_ADDRESS"),
     tokenAddress: ethAddress(env, "TOKEN_ADDRESS"),
+    bridgeDeployBlock: integer(env, "BRIDGE_DEPLOY_BLOCK", 0, 0),
     ethMinConfirmations: integer(env, "ETH_MIN_CONFIRMATIONS", 12, 1),
     lbcNetwork,
     hubs: parseHubs(env.LBC_HUBS, lbcNetwork),

@@ -193,9 +193,10 @@ Next
 - [ ] End-to-end test with a small LBC deposit against the live site
 - [ ] Sweep function: enumerate deposit addresses from `Wrapped` events and
       consolidate into the treasury
-- [ ] Proof of 1:1: publish the deposits and treasury xpubs, `reserves`
-      endpoint building the Merkle tree over address balances, `Reserves`
-      attestation contract, reserves page in the UI
+- [x] Proof of 1:1: `reserves` endpoint (supply vs treasury + deposit
+      balances, Merkle root, published xpubs) and the Verify page, which
+      recomputes the root in the browser
+- [ ] `Reserves` attestation contract: post signed roots on Ethereum
 - [ ] Alerting on treasury balance, unpaid unwraps and `reserves < supply`
 
 Later
