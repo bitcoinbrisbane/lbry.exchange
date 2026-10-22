@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { HDKey } from "@scure/bip32";
 import { mnemonicToSeedSync } from "@scure/bip39";
-import { Custody, DEPOSIT_CHAIN, DEPOSIT_CHUNKS, ethAddressChunks, normalizeEthAddress } from "../src/lib/custody.js";
+import {
+  Custody,
+  DEPOSIT_CHAIN,
+  DEPOSIT_CHUNKS,
+  ethAddressChunks,
+  LEGACY_DEPOSIT,
+  normalizeEthAddress,
+} from "../src/lib/custody.js";
 import { addressFromPublicKey, isValidAddress } from "../src/lib/lbc/address.js";
 import { MAINNET } from "../src/lib/lbc/networks.js";
 
@@ -21,26 +28,37 @@ describe("deposit address derivation", () => {
   });
 
   it("is deterministic and ignores address case", () => {
-    const a = custody.depositAddress(ALICE);
-    expect(custody.depositAddress(ALICE.toLowerCase())).toBe(a);
-    expect(new Custody(MNEMONIC, MAINNET).depositAddress(ALICE)).toBe(a);
+    const a = custody.depositAddress(ALICE, 0);
+    expect(custody.depositAddress(ALICE.toLowerCase(), 0)).toBe(a);
+    expect(new Custody(MNEMONIC, MAINNET).depositAddress(ALICE, 0)).toBe(a);
     expect(isValidAddress(a, MAINNET)).toBe(true);
     expect(a.startsWith("b")).toBe(true);
   });
 
-  it("gives different users different addresses, distinct from the treasury", () => {
-    const a = custody.depositAddress(ALICE);
-    const b = custody.depositAddress(BOB);
-    expect(a).not.toBe(b);
-    expect(a).not.toBe(custody.treasuryAddress());
+  it("gives every deposit and every user its own address, distinct from the treasury", () => {
+    const addresses = [
+      custody.depositAddress(ALICE, LEGACY_DEPOSIT),
+      custody.depositAddress(ALICE, 0),
+      custody.depositAddress(ALICE, 1),
+      custody.depositAddress(BOB, 0),
+      custody.treasuryAddress(),
+    ];
+    expect(new Set(addresses).size).toBe(addresses.length);
   });
 
-  it("matches an independent BIP32 derivation of m/44'/140'/0'/2/c0..c5", () => {
+  it("matches an independent BIP32 derivation of m/44'/140'/0'/2/c0..c5/n", () => {
     const root = HDKey.fromMasterSeed(mnemonicToSeedSync(MNEMONIC));
-    const path = `m/44'/140'/0'/${DEPOSIT_CHAIN}/${ethAddressChunks(ALICE).join("/")}`;
-    expect(custody.depositPath(ALICE)).toBe(path);
-    const expected = addressFromPublicKey(root.derive(path).publicKey!, MAINNET);
-    expect(custody.depositAddress(ALICE)).toBe(expected);
+    const legacy = `m/44'/140'/0'/${DEPOSIT_CHAIN}/${ethAddressChunks(ALICE).join("/")}`;
+    expect(custody.depositPath(ALICE, LEGACY_DEPOSIT)).toBe(legacy);
+    expect(custody.depositAddress(ALICE, LEGACY_DEPOSIT)).toBe(
+      addressFromPublicKey(root.derive(legacy).publicKey!, MAINNET),
+    );
+    expect(custody.depositPath(ALICE, 7)).toBe(`${legacy}/7`);
+    expect(custody.depositAddress(ALICE, 7)).toBe(addressFromPublicKey(root.derive(`${legacy}/7`).publicKey!, MAINNET));
+  });
+
+  it("rejects deposit indexes that are not non-hardened child numbers", () => {
+    for (const bad of [-1, 1.5, 2 ** 31]) expect(() => custody.depositAddress(ALICE, bad)).toThrow(RangeError);
   });
 
   it("puts the treasury at m/44'/140'/1'/0/0 and derives a matching private key", () => {

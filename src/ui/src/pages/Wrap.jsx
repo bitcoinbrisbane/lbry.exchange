@@ -30,7 +30,8 @@ export function Wrap() {
   const [depositError, setDepositError] = useState(null);
   const [minting, setMinting] = useState(null);
 
-  // 1. A deposit address for the connected wallet. Cached per wallet; re-derived on the server any time.
+  // 1. A fresh deposit address for the connected wallet. Cached per wallet; the server hands out the
+  //    first unused one, so it moves on once a deposit lands (see the status sync below).
   useEffect(() => {
     if (!address) return setDeposit(null);
     const key = `deposit:${address.toLowerCase()}`;
@@ -70,6 +71,18 @@ export function Wrap() {
     updatedAt: statusUpdatedAt,
     refresh,
   } = usePolling(fetchDeposits, POLL_MS, Boolean(address && deposit), [fetchDeposits]);
+
+  // Each address takes one deposit: once the shown one is used, the status names the next.
+  const nextAddress = status?.depositAddress;
+  useEffect(() => {
+    if (!address || !nextAddress) return;
+    setDeposit((current) => {
+      if (!current || current.depositAddress === nextAddress) return current;
+      const next = { ...current, depositAddress: nextAddress };
+      cache.set(`deposit:${address.toLowerCase()}`, next);
+      return next;
+    });
+  }, [address, nextAddress]);
 
   // 3. Ask for an approval, then relay Bridge.wrap from the user's wallet.
   const mint = async (d) => {

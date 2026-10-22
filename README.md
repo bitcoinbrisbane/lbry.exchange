@@ -68,8 +68,10 @@ any BIP44 wallet, account 1 shows the treasury.
 One BIP39 phrase (`CUSTODY_MNEMONIC`) controls the LBC side:
 
 ```
-deposits   m/44'/140'/0'/2/c0/c1/c2/c3/c4/c5    c0..c5 = the user's 160-bit Ethereum address
-                                                 split into six 31-bit child indexes
+deposits   m/44'/140'/0'/2/c0/c1/c2/c3/c4/c5/n  c0..c5 = the user's 160-bit Ethereum address
+                                                 split into six 31-bit child indexes;
+                                                 n = 0, 1, 2, … one fresh address per deposit
+legacy     m/44'/140'/0'/2/c0/c1/c2/c3/c4/c5    the old one-per-user address, still scanned
 treasury   m/44'/140'/1'/0/0                     pays out unwraps
 ```
 
@@ -79,6 +81,11 @@ fees come from here, so it needs a float.
 Because a deposit address is a function of the recipient, LBC sent to it can
 only ever be minted to that recipient. Handing out an address needs no
 authentication: anyone requesting X's address can only help X.
+
+Each deposit gets its own address, the way a wallet's receive chain works: the
+address handed out is the first n with no history on the LBRY chain, so it
+moves on as soon as a deposit lands (mempool included). Finding a user's
+deposits walks n up to the first unused address, still with no database.
 
 A separate Ethereum key (`SIGNER_PRIVATE_KEY`) must match `Bridge.signer()`.
 It signs mint approvals and nothing else. The wrap function refuses to sign
@@ -90,7 +97,7 @@ when the two disagree.
 user                front end              functions                 LBRY        Ethereum
  │ connect wallet       │                      │                       │             │
  │─────────────────────▶│ GET wrap?ethAddress  │                       │             │
- │                      │─────────────────────▶│ derive address        │             │
+ │                      │─────────────────────▶│ first unused address  │             │
  │   show address + QR  │◀─────────────────────│                       │             │
  │ send LBC ───────────────────────────────────────────────────────────▶│             │
  │                      │ GET status?ethAddress (poll)                 │             │

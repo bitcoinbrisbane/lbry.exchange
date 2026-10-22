@@ -4,12 +4,14 @@
  * wLBC supply (the liability) against the confirmed LBC held by the treasury
  * and every deposit address (the assets), plus a Merkle root over those
  * balances. Deposit addresses are found from the Bridge's Wrapped events and
- * derived from the published deposits xpub, so anyone can redo this from
+ * derived from the published deposits xpub (for each recipient, the legacy
+ * address and n = 0, 1, … up to the first unused), so anyone can redo this from
  * public data: the Verify page recomputes the root in the browser.
  */
 import { LbcChain } from "../lib/chain.js";
 import { loadEnv, requireMnemonic } from "../lib/config.js";
 import { Custody } from "../lib/custody.js";
+import { scanDepositAddresses } from "../lib/deposits.js";
 import { tokenSupply, wrappedRecipients } from "../lib/eth.js";
 import { handle } from "../lib/http.js";
 import { buildReservesTree } from "../lib/merkle.js";
@@ -22,10 +24,11 @@ export const main = handle(["GET"], async () => {
   // Supply is read at the same block the Wrapped scan stops at, so both describe one moment.
   const { recipients, toBlock: ethBlock } = await wrappedRecipients(env);
   const supply = await tokenSupply(env, undefined, ethBlock);
-  const depositAddresses = [...new Set(recipients.map((eth) => custody.depositAddress(eth)))];
 
   const { lbcHeight, balances } = await LbcChain.with(env, async (chain) => {
     const height = await chain.tipHeight();
+    const scans = await Promise.all(recipients.map((eth) => scanDepositAddresses(chain, custody, eth)));
+    const depositAddresses = [...new Set(scans.flatMap((s) => s.used.map((u) => u.address)))];
     const addresses = [treasuryAddress, ...depositAddresses];
     const values = await Promise.all(addresses.map((a) => chain.confirmedBalance(a)));
     return { lbcHeight: height, balances: addresses.map((lbcAddress, i) => ({ lbcAddress, balance: values[i]! })) };
@@ -51,7 +54,8 @@ export const main = handle(["GET"], async () => {
     },
     xpubs: {
       deposits: custody.depositXpub(),
-      depositsPath: "m/44'/140'/0'  →  /2/c0/c1/c2/c3/c4/c5 (Ethereum address in 31-bit chunks)",
+      depositsPath:
+        "m/44'/140'/0'  →  /2/c0/c1/c2/c3/c4/c5/n (Ethereum address in 31-bit chunks; n = 0, 1, … up to the first unused, plus the legacy address without /n)",
       treasury: custody.treasuryXpub(),
       treasuryPath: "m/44'/140'/1'  →  /0/0",
     },

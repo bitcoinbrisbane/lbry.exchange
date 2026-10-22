@@ -1,8 +1,11 @@
 /**
  * POST/GET .../bridge/wrap — LBC → wLBC.
  *
- *   GET  ?ethAddress=0x…                 the LBC deposit address for that Ethereum address
+ *   GET  ?ethAddress=0x…                 a fresh LBC deposit address for that Ethereum address
  *   POST { ethAddress, lbcTxid }         once the deposit is confirmed: a signed mint approval
+ *
+ * Each deposit gets its own address: GET hands out the first of the user's
+ * addresses with no history, and POST looks for the deposit across all of them.
  *
  * The approval is relayed by the user (or anyone) to Bridge.wrap(to, amount,
  * lbcTxid, signature); the contract's `processed` map stops double mints.
@@ -10,6 +13,7 @@
 import { LbcChain } from "../lib/chain.js";
 import { loadEnv, requireMnemonic, requireSignerKey } from "../lib/config.js";
 import { Custody } from "../lib/custody.js";
+import { scanDepositAddresses } from "../lib/deposits.js";
 import { bridgeContract, isProcessed, lbcTxidToBytes32, onChainSigner, signWrapApproval } from "../lib/eth.js";
 import { handle, HttpError, Reply, requireString } from "../lib/http.js";
 import { parseEthAddress } from "../lib/parse.js";
@@ -20,7 +24,15 @@ export const main = handle(["GET", "POST"], async (request) => {
   const env = loadEnv();
   const ethAddress = parseEthAddress(requireString(request.params, "ethAddress"));
   const custody = new Custody(requireMnemonic(), env.lbcNetwork);
-  const depositAddress = custody.depositAddress(ethAddress);
+  const lbcTxid =
+    request.method === "POST" ? requireString(request.params, "lbcTxid", LBC_TXID).toLowerCase() : undefined;
+  const { addresses, deposit } = await LbcChain.with(env, async (chain) => {
+    const addresses = await scanDepositAddresses(chain, custody, ethAddress);
+    const paid = addresses.used.map((u) => u.address);
+    const deposit = lbcTxid && paid.length > 0 ? await chain.getDeposit(paid, lbcTxid) : null;
+    return { addresses, deposit };
+  });
+  const depositAddress = addresses.next.address;
   const base = {
     ethAddress,
     depositAddress,
@@ -30,19 +42,17 @@ export const main = handle(["GET", "POST"], async (request) => {
     bridgeAddress: env.bridgeAddress,
   };
 
-  if (request.method === "GET") {
+  if (!lbcTxid) {
     return {
       ...base,
-      path: custody.depositPath(ethAddress),
-      instructions: `Send LBC to ${depositAddress}. After ${env.lbcMinConfirmations} confirmations, POST { ethAddress, lbcTxid } here to receive a mint approval for Bridge.wrap.`,
+      path: addresses.next.path,
+      instructions: `Send LBC to ${depositAddress}; it takes one deposit, and the next one gets a new address. After ${env.lbcMinConfirmations} confirmations, POST { ethAddress, lbcTxid } here to receive a mint approval for Bridge.wrap.`,
     };
   }
 
-  const lbcTxid = requireString(request.params, "lbcTxid", LBC_TXID).toLowerCase();
-  const deposit = await LbcChain.with(env, (chain) => chain.getDeposit(depositAddress, lbcTxid));
   if (!deposit) throw new HttpError(404, "Transaction not found on the LBRY chain", { ...base, lbcTxid });
   if (deposit.amount === 0n)
-    throw new HttpError(400, "Transaction pays nothing to the deposit address", { ...base, lbcTxid });
+    throw new HttpError(400, "Transaction pays nothing to this wallet's deposit addresses", { ...base, lbcTxid });
   if (deposit.confirmations < env.lbcMinConfirmations) {
     return new Reply(202, {
       ...base,

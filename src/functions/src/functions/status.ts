@@ -1,13 +1,14 @@
 /**
  * GET .../bridge/status
  *
- *   ?ethAddress=0x…             every deposit to that user's address: pending / ready / minted
+ *   ?ethAddress=0x…             every deposit to that user's addresses: pending / ready / minted
  *   ?ethAddress=0x…&lbcTxid=…   one deposit in detail
  *   ?burnTxid=0x…               an unwrap: burn confirmations and the LBC payout, if sent
  */
 import { LbcChain } from "../lib/chain.js";
 import { loadEnv, requireMnemonic } from "../lib/config.js";
 import { Custody } from "../lib/custody.js";
+import { scanDepositAddresses } from "../lib/deposits.js";
 import { bridgeContract, isProcessed, lbcTxidToBytes32, lookupBurn } from "../lib/eth.js";
 import { handle, HttpError, optionalString } from "../lib/http.js";
 import { parseBurnTxid, parseEthAddress } from "../lib/parse.js";
@@ -29,11 +30,28 @@ export const main = handle(["GET"], async (request) => {
   throw new HttpError(400, "Provide ethAddress, ethAddress and lbcTxid, or burnTxid");
 });
 
-/** What the Wrap page polls: every deposit to the user's address and where each one stands. */
+/**
+ * What the Wrap page polls: every deposit to the user's addresses and where each
+ * one stands, plus the address to show for the next deposit.
+ */
 async function depositsStatus(env: ReturnType<typeof loadEnv>, ethAddress: string) {
   const custody = new Custody(requireMnemonic(), env.lbcNetwork);
-  const depositAddress = custody.depositAddress(ethAddress);
-  const deposits = await LbcChain.with(env, (chain) => chain.listDeposits(depositAddress));
+  const { next, deposits } = await LbcChain.with(env, async (chain) => {
+    const { used, next } = await scanDepositAddresses(chain, custody, ethAddress);
+    const perAddress = await Promise.all(
+      used.map(async ({ address }) => (await chain.listDeposits(address)).map((d) => ({ ...d, address }))),
+    );
+    // One transaction can pay more than one of the user's addresses; it is still one mint.
+    const byTxid = new Map<string, (typeof perAddress)[number][number]>();
+    for (const d of perAddress.flat()) {
+      const seen = byTxid.get(d.txid);
+      byTxid.set(d.txid, seen ? { ...seen, amount: seen.amount + d.amount } : d);
+    }
+    const deposits = [...byTxid.values()].sort((a, b) =>
+      a.height === 0 ? -1 : b.height === 0 ? 1 : b.height - a.height,
+    );
+    return { next, deposits };
+  });
   // The LBRY side is the primary record. If the contract cannot be read (RPC down,
   // not deployed yet) the list still comes back, flagged, with mint state unknown:
   // a mint attempt on an already-minted deposit simply reverts.
@@ -49,11 +67,13 @@ async function depositsStatus(env: ReturnType<typeof loadEnv>, ethAddress: strin
   return {
     kind: "deposits",
     ethAddress,
-    depositAddress,
+    /** Where the next deposit should go: unused, so it changes once a deposit lands. */
+    depositAddress: next.address,
     minConfirmations: env.lbcMinConfirmations,
     warning,
     deposits: deposits.map((d, i) => ({
       lbcTxid: d.txid,
+      depositAddress: d.address,
       amount: d.amount,
       confirmations: d.confirmations,
       minted: minted[i],
@@ -64,9 +84,15 @@ async function depositsStatus(env: ReturnType<typeof loadEnv>, ethAddress: strin
 
 async function wrapStatus(env: ReturnType<typeof loadEnv>, ethAddress: string, lbcTxid: string) {
   const custody = new Custody(requireMnemonic(), env.lbcNetwork);
-  const depositAddress = custody.depositAddress(ethAddress);
-  const [deposit, processed] = await Promise.all([
-    LbcChain.with(env, (chain) => chain.getDeposit(depositAddress, lbcTxid)),
+  const [{ depositAddress, deposit }, processed] = await Promise.all([
+    LbcChain.with(env, async (chain) => {
+      const { used, next } = await scanDepositAddresses(chain, custody, ethAddress);
+      const paid = used.map((u) => u.address);
+      return {
+        depositAddress: next.address,
+        deposit: paid.length > 0 ? await chain.getDeposit(paid, lbcTxid) : null,
+      };
+    }),
     isProcessed(env, lbcTxidToBytes32(lbcTxid)),
   ]);
   const status = processed

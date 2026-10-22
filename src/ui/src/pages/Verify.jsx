@@ -258,7 +258,10 @@ export function Verify() {
                 <ListItem>
                   List every recipient of the Bridge&apos;s <Code fontSize="xs">Wrapped</Code> events on Etherscan.
                 </ListItem>
-                <ListItem>Derive each one&apos;s deposit address from the deposits xpub using the path above.</ListItem>
+                <ListItem>
+                  Derive each one&apos;s deposit addresses from the deposits xpub using the path above: n = 0, 1, …
+                  until an address has no history, plus the legacy address without /n.
+                </ListItem>
                 <ListItem>
                   Sum the confirmed balances of those addresses and the treasury on any LBRY explorer or node.
                 </ListItem>

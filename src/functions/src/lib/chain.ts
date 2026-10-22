@@ -76,14 +76,20 @@ export class LbcChain {
     return { tx, height: fetched.height };
   }
 
-  /** What `txid` pays to `address`, or null when the hub does not know the transaction. */
-  async getDeposit(address: string, txid: string): Promise<DepositInfo | null> {
+  /**
+   * What `txid` pays to `address` (or, given several, to all of them together),
+   * or null when the hub does not know the transaction.
+   */
+  async getDeposit(address: string | readonly string[], txid: string): Promise<DepositInfo | null> {
     const found = await this.getTransaction(txid);
     if (!found) return null;
     const tipHeight = await this.tipHeight();
+    const addresses = new Set(typeof address === "string" ? [address] : address);
     let amount = 0n;
-    for (const output of found.tx.outputs)
-      if (scriptToAddress(output.script, this.env.lbcNetwork) === address) amount += output.value;
+    for (const output of found.tx.outputs) {
+      const paid = scriptToAddress(output.script, this.env.lbcNetwork);
+      if (paid !== null && addresses.has(paid)) amount += output.value;
+    }
     return { txid, amount, height: found.height, confirmations: confirmationsAt(found.height, tipHeight), tipHeight };
   }
 
@@ -110,6 +116,11 @@ export class LbcChain {
     }
     // Mempool (height 0) first, then by descending height.
     return deposits.sort((a, b) => (a.height === 0 ? -1 : b.height === 0 ? 1 : b.height - a.height));
+  }
+
+  /** Whether the address has ever appeared in a transaction, confirmed or mempool. */
+  async isUsed(address: string): Promise<boolean> {
+    return (await this.hub.getHistory(address)).length > 0;
   }
 
   /** Every transaction in an address's history, confirmed and mempool. */

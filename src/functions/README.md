@@ -14,11 +14,13 @@ config                public parameters for the UI
 
 **No database.** Both chains are the ledger.
 
-- Every Ethereum address gets its own LBC deposit address, derived from one
-  BIP39 seed: `m/44'/140'/0'/2/c0/…/c5`, where `c0..c5` are the 160 bits of the
-  Ethereum address split into 31-bit child indexes (`src/lib/custody.ts`).
-  Handing out an address is a pure function, and LBC sent to it can only ever be
-  minted to that Ethereum address.
+- Every deposit gets its own LBC deposit address, derived from one BIP39 seed:
+  `m/44'/140'/0'/2/c0/…/c5/n`, where `c0..c5` are the 160 bits of the Ethereum
+  address split into 31-bit child indexes (`src/lib/custody.ts`). The address
+  handed out is the first `n` with no history, and a user's deposits are found
+  by walking `n` up to the first unused one (`src/lib/deposits.ts`). LBC sent to
+  any of them can only ever be minted to that Ethereum address. The old
+  one-per-user address (`…/c5`, no `n`) is still scanned but never handed out.
 - A mint approval is an EIP-191 signature over `Bridge.wrapMessageHash`. The
   user relays it to `Bridge.wrap`; the contract's `processed[lbcTxid]` map makes
   each deposit mintable once.

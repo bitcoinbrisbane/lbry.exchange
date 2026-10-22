@@ -8,19 +8,26 @@ import type { NetworkParams } from "./lbc/networks.js";
  * Key management for the custodial side of the bridge. Everything is derived
  * from one BIP39 seed, so there is no database of addresses to keep or lose:
  *
- *   deposits   m/44'/140'/0'/2/c0/c1/c2/c3/c4/c5   one address per Ethereum address
- *   treasury   m/44'/140'/1'/0/0                   pays out unwraps
+ *   deposits   m/44'/140'/0'/2/c0/c1/c2/c3/c4/c5/n   a fresh address per deposit (n = 0, 1, 2, …)
+ *   legacy     m/44'/140'/0'/2/c0/c1/c2/c3/c4/c5     the single reused address handed out before
+ *   treasury   m/44'/140'/1'/0/0                     pays out unwraps
  *
- * A deposit address is a pure function of (seed, Ethereum address), so a user
- * can be given their address statelessly and LBC sent to it can only ever be
- * minted to that Ethereum address. The chain index 2 keeps deposits off the
+ * A deposit address is a pure function of (seed, Ethereum address, n), so a
+ * user can be given an address statelessly and LBC sent to it can only ever be
+ * minted to that Ethereum address. Like a wallet's receive chain, the address
+ * handed out is the first n with no history, so each deposit lands on its own
+ * address (see deposits.ts). The chain index 2 keeps deposits off the
  * receive/change chains (0 and 1) that ordinary BIP44 wallets scan, and the
  * 160-bit address is split into six 31-bit non-hardened child indexes.
+ *
+ * The legacy address is never handed out again but is still scanned, so
+ * deposits made to it before per-deposit addresses stay mintable and counted.
  *
  * The treasury sits in account 1 at the standard first receive address, so
  * any BIP44 wallet restored from the seed with account 1 can see and spend it.
  * Deposit addresses can be enumerated later from the bridge's Wrapped events
- * (each carries the Ethereum address) and swept into the treasury.
+ * (each carries the Ethereum address, then n runs up to the first unused) and
+ * swept into the treasury.
  */
 export const DEPOSIT_CHAIN = 2;
 export const TREASURY_ACCOUNT = 1;
@@ -29,6 +36,11 @@ const CHUNK_BITS = 31n;
 const CHUNK_MASK = (1n << CHUNK_BITS) - 1n;
 /** ceil(160 / 31) */
 export const DEPOSIT_CHUNKS = 6;
+/** The deposit index of the legacy, one-per-user address. */
+export const LEGACY_DEPOSIT = null;
+
+/** Which of a user's deposit addresses: n, or LEGACY_DEPOSIT. */
+export type DepositIndex = number | typeof LEGACY_DEPOSIT;
 
 /** Checksummed form of an Ethereum address; throws on anything that is not one. */
 export function normalizeEthAddress(address: string): string {
@@ -55,30 +67,33 @@ export class Custody {
     this.treasuryAccount = deriveAccountKey(mnemonic, "bip44", network, { accountIndex: TREASURY_ACCOUNT });
   }
 
-  /** Child indexes below the account key for an Ethereum address's deposit address. */
-  depositIndexes(ethAddress: string): number[] {
-    return [DEPOSIT_CHAIN, ...ethAddressChunks(ethAddress)];
+  /** Child indexes below the account key for one of an Ethereum address's deposit addresses. */
+  depositIndexes(ethAddress: string, index: DepositIndex): number[] {
+    const base = [DEPOSIT_CHAIN, ...ethAddressChunks(ethAddress)];
+    if (index === LEGACY_DEPOSIT) return base;
+    if (!Number.isInteger(index) || index < 0 || index >= 2 ** 31) throw new RangeError("deposit index out of range");
+    return [...base, index];
   }
 
   /** Human-readable derivation path of a deposit address. */
-  depositPath(ethAddress: string): string {
-    return `m/44'/${this.network.coinType}'/0'/${this.depositIndexes(ethAddress).join("/")}`;
+  depositPath(ethAddress: string, index: DepositIndex): string {
+    return `m/44'/${this.network.coinType}'/0'/${this.depositIndexes(ethAddress, index).join("/")}`;
   }
 
-  private depositKey(ethAddress: string): HDKey {
-    return this.depositIndexes(ethAddress).reduce((key, index) => key.deriveChild(index), this.account);
+  private depositKey(ethAddress: string, index: DepositIndex): HDKey {
+    return this.depositIndexes(ethAddress, index).reduce((key, i) => key.deriveChild(i), this.account);
   }
 
-  /** The LBC address a user must send to in order to mint wLBC to `ethAddress`. */
-  depositAddress(ethAddress: string): string {
-    const publicKey = this.depositKey(ethAddress).publicKey;
+  /** An LBC address a user can send to in order to mint wLBC to `ethAddress`. */
+  depositAddress(ethAddress: string, index: DepositIndex): string {
+    const publicKey = this.depositKey(ethAddress, index).publicKey;
     if (!publicKey) throw new Error("derivation failed");
     return addressFromPublicKey(publicKey, this.network);
   }
 
   /** Private key of a deposit address (for sweeping). Caller must wipe the result. */
-  depositPrivateKey(ethAddress: string): Uint8Array {
-    const key = this.depositKey(ethAddress).privateKey;
+  depositPrivateKey(ethAddress: string, index: DepositIndex): Uint8Array {
+    const key = this.depositKey(ethAddress, index).privateKey;
     if (!key) throw new Error("account key has no private key");
     return key.slice();
   }
