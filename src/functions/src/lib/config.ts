@@ -11,6 +11,11 @@ import { isAddress } from "ethers";
 /** Non-secret configuration shared by every function, read from the environment. */
 export interface BridgeEnv {
   ethRpcUrl: string;
+  /**
+   * RPC for the Wrapped event scan, which needs eth_getLogs over the Bridge's
+   * whole history; many free tiers cap the range. Defaults to ethRpcUrl.
+   */
+  ethLogsRpcUrl: string;
   chainId: number;
   bridgeAddress: string;
   tokenAddress: string;
@@ -75,8 +80,10 @@ export function loadEnv(env: Env = process.env): BridgeEnv {
   const networkName = (env.LBC_NETWORK?.trim() || "mainnet") as NetworkName;
   const lbcNetwork = NETWORKS[networkName];
   if (!lbcNetwork) throw new ConfigError(`LBC_NETWORK must be one of ${Object.keys(NETWORKS).join(", ")}`);
+  const ethRpcUrl = required(env, "ETH_RPC_URL");
   return {
-    ethRpcUrl: required(env, "ETH_RPC_URL"),
+    ethRpcUrl,
+    ethLogsRpcUrl: env.ETH_LOGS_RPC_URL?.trim() || ethRpcUrl,
     chainId: integer(env, "CHAIN_ID", undefined, 1),
     bridgeAddress: ethAddress(env, "BRIDGE_ADDRESS"),
     tokenAddress: ethAddress(env, "TOKEN_ADDRESS"),

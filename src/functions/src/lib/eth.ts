@@ -27,9 +27,9 @@ export const BRIDGE_ABI = [
 
 const bridgeInterface = new Interface(BRIDGE_ABI);
 
-export function provider(env: BridgeEnv): JsonRpcProvider {
+export function provider(env: BridgeEnv, url = env.ethRpcUrl): JsonRpcProvider {
   // A static network skips the eth_chainId round trip and pins the expected chain.
-  return new JsonRpcProvider(env.ethRpcUrl, env.chainId, { staticNetwork: true });
+  return new JsonRpcProvider(url, env.chainId, { staticNetwork: true });
 }
 
 export function bridgeContract(env: BridgeEnv, rpc = provider(env)): Contract {
@@ -206,7 +206,7 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
  */
 export async function wrappedRecipients(
   env: BridgeEnv,
-  rpc = provider(env),
+  rpc = provider(env, env.ethLogsRpcUrl),
 ): Promise<{ recipients: string[]; toBlock: number }> {
   const topic = bridgeInterface.getEvent("Wrapped")!.topicHash;
   const toBlock = (await rpc.getBlockNumber()) - HEAD_LAG;
