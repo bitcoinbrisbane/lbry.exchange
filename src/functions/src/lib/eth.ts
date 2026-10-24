@@ -3,6 +3,7 @@ import {
   Interface,
   JsonRpcProvider,
   Wallet,
+  getAddress,
   getBytes,
   solidityPackedKeccak256,
   type Log,
@@ -81,6 +82,40 @@ export async function signWrapApproval(
   const wallet = new Wallet(signerKey);
   const signature = await wallet.signMessage(getBytes(wrapMessageHash(input)));
   return { signature, signer: wallet.address };
+}
+
+export interface DepositAddressInput {
+  chainId: number;
+  bridgeAddress: string;
+  ethAddress: string;
+  depositAddress: string;
+}
+
+/**
+ * The statement the signer makes when handing out a deposit address. Plain
+ * text, so any wallet or Etherscan's "verify signature" can check it; the Wrap
+ * page rebuilds it from what it already knows and only shows the address when
+ * the signature recovers to Bridge.signer(). A tampered API response or a
+ * look-alike site cannot produce one for an address of its own.
+ */
+export function depositAddressMessage(input: DepositAddressInput): string {
+  return [
+    "lbry.exchange deposit address",
+    `LBC address: ${input.depositAddress}`,
+    `Mints wLBC to: ${getAddress(input.ethAddress)}`,
+    `Bridge: ${getAddress(input.bridgeAddress)}`,
+    `Chain: ${input.chainId}`,
+  ].join("\n");
+}
+
+/** EIP-191 personal-sign of depositAddressMessage. */
+export async function signDepositAddress(
+  signerKey: string,
+  input: DepositAddressInput,
+): Promise<{ message: string; signature: string; signer: string }> {
+  const wallet = new Wallet(signerKey);
+  const message = depositAddressMessage(input);
+  return { message, signature: await wallet.signMessage(message), signer: wallet.address };
 }
 
 export interface UnwrapEvent {

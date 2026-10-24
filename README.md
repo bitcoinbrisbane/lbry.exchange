@@ -87,6 +87,14 @@ address handed out is the first n with no history on the LBRY chain, so it
 moves on as soon as a deposit lands (mempool included). Finding a user's
 deposits walks n up to the first unused address, still with no database.
 
+Every address handed out comes with an EIP-191 signature by the bridge signer
+over a plain-text statement naming the LBC address, the Ethereum recipient, the
+bridge and the chain. The Wrap page rebuilds that statement itself and only
+shows the address if the signature recovers to `Bridge.signer()` read from
+Ethereum, so a tampered API response or a look-alike site can't swap in an
+address of its own. The statement can also be checked in any wallet or on
+Etherscan's "verify signature" page.
+
 A separate Ethereum key (`SIGNER_PRIVATE_KEY`) must match `Bridge.signer()`.
 It signs mint approvals and nothing else. The wrap function refuses to sign
 when the two disagree.

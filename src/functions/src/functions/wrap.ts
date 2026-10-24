@@ -1,7 +1,8 @@
 /**
  * POST/GET .../bridge/wrap — LBC → wLBC.
  *
- *   GET  ?ethAddress=0x…                 a fresh LBC deposit address for that Ethereum address
+ *   GET  ?ethAddress=0x…                 a fresh LBC deposit address for that Ethereum address,
+ *                                        signed by the bridge signer (see depositAddressMessage)
  *   POST { ethAddress, lbcTxid }         once the deposit is confirmed: a signed mint approval
  *
  * Each deposit gets its own address: GET hands out the first of the user's
@@ -14,7 +15,14 @@ import { LbcChain } from "../lib/chain.js";
 import { loadEnv, requireMnemonic, requireSignerKey } from "../lib/config.js";
 import { Custody } from "../lib/custody.js";
 import { scanDepositAddresses } from "../lib/deposits.js";
-import { bridgeContract, isProcessed, lbcTxidToBytes32, onChainSigner, signWrapApproval } from "../lib/eth.js";
+import {
+  bridgeContract,
+  isProcessed,
+  lbcTxidToBytes32,
+  onChainSigner,
+  signDepositAddress,
+  signWrapApproval,
+} from "../lib/eth.js";
 import { handle, HttpError, Reply, requireString } from "../lib/http.js";
 import { parseEthAddress } from "../lib/parse.js";
 
@@ -43,9 +51,19 @@ export const main = handle(["GET", "POST"], async (request) => {
   };
 
   if (!lbcTxid) {
+    const { message, signature, signer } = await signDepositAddress(requireSignerKey(), {
+      chainId: env.chainId,
+      bridgeAddress: env.bridgeAddress,
+      ethAddress,
+      depositAddress,
+    });
     return {
       ...base,
       path: addresses.next.path,
+      /** Proof the address came from the bridge: check `signature` over `message` recovers Bridge.signer(). */
+      message,
+      signature,
+      signer,
       instructions: `Send LBC to ${depositAddress}; it takes one deposit, and the next one gets a new address. After ${env.lbcMinConfirmations} confirmations, POST { ethAddress, lbcTxid } here to receive a mint approval for Bridge.wrap.`,
     };
   }

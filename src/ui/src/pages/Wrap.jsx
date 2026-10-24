@@ -11,10 +11,20 @@ import { useBridgeConfig } from "../hooks/useBridgeConfig";
 import { usePageMeta } from "../hooks/usePageMeta";
 import { usePolling } from "../hooks/usePolling";
 import { bridgeApi, errorOf } from "../lib/bridgeApi";
-import { BRIDGE_ABI, addTokenToWallet, ensureChain, ethTxUrl, getSigner } from "../lib/contracts";
+import {
+  BRIDGE_ABI,
+  addTokenToWallet,
+  ensureChain,
+  ethTxUrl,
+  getSigner,
+  UnsignedAddressError,
+  verifyDepositAddress,
+} from "../lib/contracts";
 import { cache } from "../lib/format";
 
 const POLL_MS = 30_000;
+// Bumped from "deposit:" when addresses became signed, so no unchecked address is shown from cache.
+const depositCacheKey = (address) => `deposit-v2:${address.toLowerCase()}`;
 
 export function Wrap() {
   usePageMeta({
@@ -26,23 +36,31 @@ export function Wrap() {
   const { address } = useWallet();
   const { config, error: configError } = useBridgeConfig();
   const toast = useToast();
-  const [deposit, setDeposit] = useState(() => (address ? cache.get(`deposit:${address.toLowerCase()}`) : null));
+  const [deposit, setDeposit] = useState(() => (address ? cache.get(depositCacheKey(address)) : null));
   const [depositError, setDepositError] = useState(null);
   const [minting, setMinting] = useState(null);
+  const [addressRequest, setAddressRequest] = useState(0);
 
-  // 1. A fresh deposit address for the connected wallet. Cached per wallet; the server hands out the
-  //    first unused one, so it moves on once a deposit lands (see the status sync below).
+  // 1. A fresh deposit address for the connected wallet, shown only once its signature checks out
+  //    against Bridge.signer(). Cached per wallet; the server hands out the first unused one, so it
+  //    moves on once a deposit lands (see the status sync below).
   useEffect(() => {
     if (!address) return setDeposit(null);
-    const key = `deposit:${address.toLowerCase()}`;
+    const key = depositCacheKey(address);
     const cached = cache.get(key);
     if (cached) setDeposit(cached);
     let cancelled = false;
     bridgeApi
       .depositAddress(address)
-      .then((res) => {
+      .then(async (res) => {
         if (cancelled) return;
         if (!res.ok) throw new Error(errorOf(res, "Could not get a deposit address"));
+        await verifyDepositAddress({
+          ethAddress: address,
+          depositAddress: res.data.depositAddress,
+          signature: res.data.signature,
+        });
+        if (cancelled) return;
         const next = {
           depositAddress: res.data.depositAddress,
           minConfirmations: res.data.minConfirmations,
@@ -52,11 +70,19 @@ export function Wrap() {
         setDeposit(next);
         setDepositError(null);
       })
-      .catch((err) => !cancelled && setDepositError(err.message));
+      .catch((err) => {
+        if (cancelled) return;
+        // A bad signature means nothing shown so far can be trusted; a network error keeps the cached address.
+        if (err instanceof UnsignedAddressError) {
+          cache.set(key, null);
+          setDeposit(null);
+        }
+        setDepositError(err.message);
+      });
     return () => {
       cancelled = true;
     };
-  }, [address]);
+  }, [address, addressRequest]);
 
   // 2. Poll the deposits seen for this wallet.
   const fetchDeposits = useCallback(async () => {
@@ -72,17 +98,13 @@ export function Wrap() {
     refresh,
   } = usePolling(fetchDeposits, POLL_MS, Boolean(address && deposit), [fetchDeposits]);
 
-  // Each address takes one deposit: once the shown one is used, the status names the next.
+  // Each address takes one deposit: once the shown one is used, the status names the next. Fetch it
+  // through the signed path rather than trusting the status reply.
   const nextAddress = status?.depositAddress;
+  const shownAddress = deposit?.depositAddress;
   useEffect(() => {
-    if (!address || !nextAddress) return;
-    setDeposit((current) => {
-      if (!current || current.depositAddress === nextAddress) return current;
-      const next = { ...current, depositAddress: nextAddress };
-      cache.set(`deposit:${address.toLowerCase()}`, next);
-      return next;
-    });
-  }, [address, nextAddress]);
+    if (nextAddress && shownAddress && nextAddress !== shownAddress) setAddressRequest((n) => n + 1);
+  }, [nextAddress, shownAddress]);
 
   // 3. Ask for an approval, then relay Bridge.wrap from the user's wallet.
   const mint = async (d) => {

@@ -1,7 +1,8 @@
 import { ethers } from "ethers";
-import { ETH_RPC_URL } from "../config/constants";
+import { BRIDGE_ADDRESS, ETH_RPC_URL } from "../config/constants";
 
 export const BRIDGE_ABI = [
+  "function signer() view returns (address)",
   "function wrap(address to, uint256 amount, bytes32 lbcTxid, bytes signature)",
   "function unwrap(uint256 amount, string lbcAddress)",
   "function processed(bytes32 lbcTxid) view returns (bool)",
@@ -19,6 +20,42 @@ export function getReadProvider() {
   if (ETH_RPC_URL) return new ethers.JsonRpcProvider(ETH_RPC_URL);
   if (typeof window !== "undefined" && window.ethereum) return new ethers.BrowserProvider(window.ethereum);
   return null;
+}
+
+/** Mirrors depositAddressMessage in src/functions/src/lib/eth.ts; the two must match exactly. */
+export function depositAddressMessage({ chainId, bridgeAddress, ethAddress, depositAddress }) {
+  return [
+    "lbry.exchange deposit address",
+    `LBC address: ${depositAddress}`,
+    `Mints wLBC to: ${ethers.getAddress(ethAddress)}`,
+    `Bridge: ${ethers.getAddress(bridgeAddress)}`,
+    `Chain: ${chainId}`,
+  ].join("\n");
+}
+
+/** A deposit address whose signature does not recover to Bridge.signer(). */
+export class UnsignedAddressError extends Error {}
+
+/**
+ * Throws unless `signature` shows Bridge.signer() handed out `depositAddress` for
+ * `ethAddress`. The bridge address is this build's own and the signer and chain are
+ * read from Ethereum, so nothing here trusts the API that returned the address.
+ */
+export async function verifyDepositAddress({ ethAddress, depositAddress, signature }) {
+  const provider = getReadProvider();
+  if (!provider) throw new Error("No Ethereum connection to check the deposit address against");
+  const bridge = new ethers.Contract(BRIDGE_ADDRESS, BRIDGE_ABI, provider);
+  const [{ chainId }, signer] = await Promise.all([provider.getNetwork(), bridge.signer()]);
+  const message = depositAddressMessage({ chainId, bridgeAddress: BRIDGE_ADDRESS, ethAddress, depositAddress });
+  let recovered = null;
+  try {
+    recovered = ethers.verifyMessage(message, signature);
+  } catch {
+    // Malformed signature: same outcome as a wrong one.
+  }
+  if (!recovered || recovered.toLowerCase() !== signer.toLowerCase()) {
+    throw new UnsignedAddressError("This deposit address is not signed by the bridge. Do not send LBC to it.");
+  }
 }
 
 export async function getSigner() {

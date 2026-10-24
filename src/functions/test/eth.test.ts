@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { Interface, Wallet, getBytes, verifyMessage } from "ethers";
-import { BRIDGE_ABI, lbcTxidToBytes32, signWrapApproval, unwrapEvents, wrapMessageHash } from "../src/lib/eth.js";
+import {
+  BRIDGE_ABI,
+  depositAddressMessage,
+  lbcTxidToBytes32,
+  signDepositAddress,
+  signWrapApproval,
+  unwrapEvents,
+  wrapMessageHash,
+} from "../src/lib/eth.js";
 
 // Produced by deploying contracts/Bridge.sol on Hardhat (chain 31337) and calling
 // wrapMessageHash(to, amount, lbcTxid); see the hardhat test suite for the contract.
@@ -47,5 +55,35 @@ describe("unwrap events", () => {
     expect(events).toEqual([
       { id: 5n, from: VECTOR.to, amount: 250000000n, lbcAddress: "bCqJrLHdoiRqEZ1whFZ3WHNb33bP34SuGx", logIndex: 2 },
     ]);
+  });
+});
+
+describe("deposit address receipts", () => {
+  const input = {
+    chainId: 1,
+    bridgeAddress: VECTOR.bridgeAddress.toLowerCase(),
+    ethAddress: VECTOR.to.toLowerCase(),
+    depositAddress: "bCqJrLHdoiRqEZ1whFZ3WHNb33bP34SuGx",
+  };
+
+  it("states the address, recipient, bridge and chain in plain text", () => {
+    expect(depositAddressMessage(input)).toBe(
+      [
+        "lbry.exchange deposit address",
+        "LBC address: bCqJrLHdoiRqEZ1whFZ3WHNb33bP34SuGx",
+        `Mints wLBC to: ${VECTOR.to}`,
+        `Bridge: ${VECTOR.bridgeAddress}`,
+        "Chain: 1",
+      ].join("\n"),
+    );
+  });
+
+  it("signs with EIP-191 so a browser can recover the signer", async () => {
+    const wallet = Wallet.createRandom();
+    const { message, signature, signer } = await signDepositAddress(wallet.privateKey, input);
+    expect(signer).toBe(wallet.address);
+    expect(verifyMessage(message, signature)).toBe(wallet.address);
+    const swapped = depositAddressMessage({ ...input, depositAddress: "bCxrJ2PonHnfDTPK4mpM46YWmgXubh831T" });
+    expect(verifyMessage(swapped, signature)).not.toBe(wallet.address);
   });
 });
