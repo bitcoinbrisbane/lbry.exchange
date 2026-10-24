@@ -19,6 +19,10 @@
 
 environment:
   ETH_RPC_URL: "${ETH_RPC_URL}"
+  # RPC for the Wrapped event scan (eth_getLogs over the Bridge's whole history,
+  # used by reserves and unwrap), which free tiers of most providers refuse. Set
+  # it to the same value as ETH_RPC_URL when that one allows wide log ranges.
+  ETH_LOGS_RPC_URL: "${ETH_LOGS_RPC_URL}"
   CHAIN_ID: "${CHAIN_ID}"
   BRIDGE_ADDRESS: "${BRIDGE_ADDRESS}"
   TOKEN_ADDRESS: "${TOKEN_ADDRESS}"
@@ -84,8 +88,3 @@ packages:
         limits:
           timeout: 30000
           memory: 256
-        environment:
-          # RPC for the Wrapped event scan (eth_getLogs over the Bridge's whole
-          # history), which free tiers of most providers refuse. Set it to the
-          # same value as ETH_RPC_URL when that one allows wide log ranges.
-          ETH_LOGS_RPC_URL: "${ETH_LOGS_RPC_URL}"
