@@ -2,21 +2,23 @@
  * POST .../bridge/unwrap { burnTxid } — wLBC → LBC.
  *
  * Reads the Unwrap event(s) the burn emitted, waits for enough Ethereum
- * confirmations, and pays native LBC from the treasury to the address named in
- * each event. The payout carries an OP_RETURN marker naming the burn, and the
- * treasury's history is checked for that marker first, so calling this twice
- * for the same burn never pays twice.
+ * confirmations, and pays native LBC to the address named in each event. The
+ * LBC comes from deposit addresses and the treasury pays the fee (see
+ * payout.ts), so deposits and supply stay 1:1. The payout carries an OP_RETURN
+ * marker naming the burn, and the treasury's history is checked for that
+ * marker first, so calling this twice for the same burn never pays twice.
  */
 import { LbcChain } from "../lib/chain.js";
 import { loadEnv, requireMnemonic } from "../lib/config.js";
 import { Custody } from "../lib/custody.js";
-import { lookupBurn, type UnwrapEvent } from "../lib/eth.js";
+import { spendableDeposits } from "../lib/deposits.js";
+import { lookupBurn, wrappedRecipients, type UnwrapEvent } from "../lib/eth.js";
 import { handle, HttpError, Reply, requireString } from "../lib/http.js";
 import { parseBurnTxid } from "../lib/parse.js";
 import { DUST_THRESHOLD } from "../lib/lbc/networks.js";
-import { InsufficientFundsError, assembleTransaction, selectCoins, signTransaction } from "../lib/lbc/tx/builder.js";
-import { wipe } from "../lib/lbc/encoding/bytes.js";
+import { signTransaction } from "../lib/lbc/tx/builder.js";
 import { unwrapMarkerScript } from "../lib/marker.js";
+import { PayoutFundsError, planPayout } from "../lib/payout.js";
 
 type PayoutResult =
   | {
@@ -51,24 +53,34 @@ export const main = handle(["POST"], async (request) => {
   const custody = new Custody(requireMnemonic(), env.lbcNetwork);
   const treasuryAddress = custody.treasuryAddress();
 
+  // Deposit addresses are found from the Wrapped events, the same set reserves counts.
+  let recipients: Promise<string[]> | undefined;
+  const payer: Payer = {
+    custody,
+    treasuryAddress,
+    feePerByte: env.feePerByte,
+    minConfirmations: env.lbcMinConfirmations,
+    recipients: () => (recipients ??= wrappedRecipients(env).then((r) => r.recipients)),
+  };
   const payouts = await LbcChain.with(env, async (chain) => {
     const results: PayoutResult[] = [];
-    for (const event of burn.events)
-      results.push(await settle(chain, custody, treasuryAddress, burnTxid, event, env.feePerByte));
+    for (const event of burn.events) results.push(await settle(chain, payer, burnTxid, event));
     return results;
   });
 
   return { burnTxid, confirmations: burn.confirmations, treasuryAddress, payouts };
 });
 
-async function settle(
-  chain: LbcChain,
-  custody: Custody,
-  treasuryAddress: string,
-  burnTxid: string,
-  event: UnwrapEvent,
-  feePerByte: number,
-): Promise<PayoutResult> {
+interface Payer {
+  custody: Custody;
+  treasuryAddress: string;
+  feePerByte: number;
+  minConfirmations: number;
+  recipients: () => Promise<string[]>;
+}
+
+async function settle(chain: LbcChain, payer: Payer, burnTxid: string, event: UnwrapEvent): Promise<PayoutResult> {
+  const { custody, treasuryAddress } = payer;
   const common = { id: event.id, lbcAddress: event.lbcAddress, amount: event.amount };
   const marker = { burnTxid, unwrapId: event.id };
 
@@ -85,41 +97,42 @@ async function settle(
   const existing = await chain.findPayout(treasuryAddress, marker);
   if (existing) return { ...common, status: "paid", lbcTxid: existing.txid, confirmations: existing.confirmations };
 
-  const utxos = await chain.getUtxos(treasuryAddress);
-  const changeScript = chain.outputScript(treasuryAddress);
-  const recipients = [
-    { script: payeeScript, value: event.amount },
-    { script: unwrapMarkerScript(marker), value: 0n },
-  ];
-  let selection;
+  // Fetched per event: an earlier payout in this burn has already spent some coins.
+  const [deposits, treasuryUtxos] = await Promise.all([
+    payer.recipients().then((r) => spendableDeposits(chain, custody, r, payer.minConfirmations)),
+    chain.getUtxos(treasuryAddress),
+  ]);
+  let plan;
   try {
-    selection = selectCoins(utxos, recipients, changeScript, feePerByte);
+    plan = planPayout({
+      depositUtxos: deposits.utxos,
+      treasuryUtxos,
+      payee: { script: payeeScript, value: event.amount },
+      markerScript: unwrapMarkerScript(marker),
+      treasuryScript: chain.outputScript(treasuryAddress),
+      feePerByte: payer.feePerByte,
+    });
   } catch (err) {
-    if (err instanceof InsufficientFundsError) {
-      throw new HttpError(503, "Treasury has insufficient LBC for this payout", {
-        burnTxid,
-        id: event.id,
-        needed: err.needed,
-        available: err.available,
-      });
+    if (err instanceof PayoutFundsError) {
+      const message =
+        err.source === "deposits"
+          ? "Deposit addresses hold too little confirmed LBC for this payout"
+          : "Treasury has too little LBC to pay the network fee";
+      throw new HttpError(503, message, { burnTxid, id: event.id, needed: err.needed, available: err.available });
     }
     throw err;
   }
 
-  const unsigned = assembleTransaction(
-    selection.inputs,
-    recipients,
-    selection.change > 0n ? { script: changeScript, value: selection.change } : undefined,
-  );
-  const key = custody.treasuryPrivateKey();
-  let signed;
-  try {
-    // signTransaction wipes each key it is handed, so give it copies and wipe the original after.
-    signed = signTransaction(unsigned, () => key.slice());
-  } finally {
-    wipe(key);
-  }
+  // signTransaction wipes each key once used; both derivations return fresh copies.
+  const signed = signTransaction(plan.unsigned, (utxo) => {
+    if (utxo.address === treasuryAddress) return custody.treasuryPrivateKey();
+    const owner = deposits.owners.get(utxo.address);
+    if (!owner) throw new Error(`no key for ${utxo.address}`);
+    return custody.depositPrivateKey(owner.ethAddress, owner.index);
+  });
   const lbcTxid = await chain.broadcast(signed);
-  console.log(`unwrap ${event.id} (${burnTxid}): paid ${event.amount} dewies to ${event.lbcAddress} in ${lbcTxid}`);
-  return { ...common, status: "paid", lbcTxid, confirmations: 0, fee: selection.fee };
+  console.log(
+    `unwrap ${event.id} (${burnTxid}): paid ${event.amount} dewies to ${event.lbcAddress} in ${lbcTxid}, fee ${plan.unsigned.fee}`,
+  );
+  return { ...common, status: "paid", lbcTxid, confirmations: 0, fee: plan.unsigned.fee };
 }

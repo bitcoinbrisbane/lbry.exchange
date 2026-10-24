@@ -1,7 +1,6 @@
 import {
   Alert,
   AlertIcon as ChakraAlertIcon,
-  Badge,
   Box,
   Button,
   Code,
@@ -74,8 +73,8 @@ function BackingHero({ data }) {
         {data.backingBps == null
           ? "No wLBC has been minted yet."
           : ok
-            ? "Reserves cover every wLBC. Reserves can exceed supply while deposits wait to be minted or unwraps wait to be paid."
-            : "Reserves are below supply. Payout fees come from the treasury, so the operator must top it up."}
+            ? "Deposits cover every wLBC. They can exceed supply while deposits wait to be minted or unwraps wait to be paid."
+            : "Deposits are below supply."}
       </Text>
     </Box>
   );
@@ -132,7 +131,7 @@ export function Verify() {
   usePageMeta({
     title: "Verify wLBC reserves | lbc.exchange",
     description:
-      "Proof of reserves for wLBC: circulating supply against LBC held in the treasury and deposit addresses, with a Merkle root you can recompute in your browser.",
+      "Proof of reserves for wLBC: circulating supply against LBC held in deposit addresses, 1:1, with a Merkle root you can recompute in your browser.",
     path: "/verify",
   });
 
@@ -180,10 +179,9 @@ export function Verify() {
               <LastChecked updatedAt={updatedAt} intervalMs={POLL_MS} loading={loading} onRefresh={refresh} />
             </HStack>
             <BackingHero data={data} />
-            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
               <StatTile label="wLBC in circulation" value={formatLbc(data.supply)} unit="wLBC" />
-              <StatTile label="LBC in reserve" value={formatLbc(data.reserves)} unit="LBC" />
-              <StatTile label="Held in the treasury" value={formatLbc(data.treasury?.balance ?? 0)} unit="LBC" />
+              <StatTile label="LBC in deposit addresses" value={formatLbc(data.reserves)} unit="LBC" />
             </SimpleGrid>
           </Stack>
 
@@ -195,8 +193,7 @@ export function Verify() {
               <Table size="sm">
                 <Thead>
                   <Tr>
-                    <Th>Address</Th>
-                    <Th>Type</Th>
+                    <Th>Deposit address</Th>
                     <Th isNumeric>Confirmed balance</Th>
                   </Tr>
                 </Thead>
@@ -213,9 +210,6 @@ export function Verify() {
                           fontSize="xs"
                         />
                       </Td>
-                      <Td>
-                        <Badge colorScheme={l.kind === "treasury" ? "green" : "gray"}>{l.kind}</Badge>
-                      </Td>
                       <Td isNumeric sx={{ fontVariantNumeric: "tabular-nums" }}>
                         {formatLbc(l.balance)} LBC
                       </Td>
@@ -225,7 +219,6 @@ export function Verify() {
                 <Tfoot>
                   <Tr>
                     <Th>Total</Th>
-                    <Th />
                     <Th isNumeric sx={{ fontVariantNumeric: "tabular-nums" }}>
                       {formatLbc(data.reserves)} LBC
                     </Th>
@@ -248,12 +241,6 @@ export function Verify() {
                 </Text>
                 <Address value={data.xpubs.deposits} truncate copyable label="deposits xpub" />
               </Stack>
-              <Stack spacing={1}>
-                <Text fontSize="sm" fontWeight="medium">
-                  Treasury, {data.xpubs.treasuryPath}
-                </Text>
-                <Address value={data.xpubs.treasury} truncate copyable label="treasury xpub" />
-              </Stack>
               <OrderedList spacing={1} fontSize="sm" pl={1}>
                 <ListItem>
                   List every recipient of the Bridge&apos;s <Code fontSize="xs">Wrapped</Code> events on Etherscan.
@@ -262,9 +249,7 @@ export function Verify() {
                   Derive each one&apos;s deposit addresses from the deposits xpub using the path above: n = 0, 1, …
                   until an address has no history, plus the legacy address without /n.
                 </ListItem>
-                <ListItem>
-                  Sum the confirmed balances of those addresses and the treasury on any LBRY explorer or node.
-                </ListItem>
+                <ListItem>Sum the confirmed balances of those addresses on any LBRY explorer or node.</ListItem>
                 <ListItem>
                   Compare with <Code fontSize="xs">totalSupply()</Code> of the{" "}
                   <a

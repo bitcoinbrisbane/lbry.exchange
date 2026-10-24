@@ -37,6 +37,9 @@ export function Header() {
             <Link as={NavLink} to="/verify" variant="nav">
               Verify
             </Link>
+            <Link as={NavLink} to="/donate" variant="nav">
+              Donate
+            </Link>
             <Link href="https://lbry.com" isExternal variant="nav">
               LBRY.com
             </Link>

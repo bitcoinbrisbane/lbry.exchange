@@ -5,7 +5,7 @@ LBC ↔ wLBC bridge defined in `contracts/Bridge.sol`.
 
 ```
 wrap    LBC  → wLBC   give the user a deposit address; approve the mint once LBC arrives
-unwrap  wLBC → LBC    read the burn on Ethereum; pay native LBC from the treasury
+unwrap  wLBC → LBC    read the burn on Ethereum; pay native LBC from deposit coins
 status                progress of either flow
 config                public parameters for the UI
 ```
@@ -24,13 +24,13 @@ config                public parameters for the UI
 - A mint approval is an EIP-191 signature over `Bridge.wrapMessageHash`. The
   user relays it to `Bridge.wrap`; the contract's `processed[lbcTxid]` map makes
   each deposit mintable once.
-- Unwrap payouts spend from a treasury at `m/44'/140'/1'/0/0` and carry an
-  `OP_RETURN "wLBC" || burnTxHash || unwrapId` output. Before paying, the
-  treasury's history is scanned for that marker, so repeating a request never
-  pays twice (`src/lib/marker.ts`).
-- Deposit addresses can be enumerated from the bridge's `Wrapped` events and
-  swept into the treasury with `Custody.depositPrivateKey`; a sweep function is
-  not written yet.
+- Unwrap payouts spend deposit-address coins (found from the bridge's `Wrapped`
+  events) for the amount, and a treasury coin at `m/44'/140'/1'/0/0` for the
+  network fee (`src/lib/payout.ts`), so deposits and supply stay 1:1. Each
+  payout carries an `OP_RETURN "wLBC" || burnTxHash || unwrapId` output and
+  always spends a treasury coin; before paying, the treasury's history is
+  scanned for that marker, so repeating a request never pays twice
+  (`src/lib/marker.ts`).
 
 LBRY chain access goes through the public hubs with the wallet code vendored in
 `src/lib/lbc` from
@@ -46,7 +46,7 @@ With DO's default prefix `/api/v1/web/bridge/`:
 | --- | --- | --- |
 | `GET wrap?ethAddress=0x…` | Deposit address for an Ethereum address | `{ depositAddress, path, minConfirmations, … }` |
 | `POST wrap { ethAddress, lbcTxid }` | Approve a confirmed deposit | `200 { status: "approved", wrapArgs: { to, amount, lbcTxid, signature } }`, `202` pending, `409` already minted |
-| `POST unwrap { burnTxid }` | Pay out a `Bridge.unwrap` burn | `200 { payouts: [{ id, lbcAddress, amount, status, lbcTxid }] }`, `202` pending, `503` treasury short |
+| `POST unwrap { burnTxid }` | Pay out a `Bridge.unwrap` burn | `200 { payouts: [{ id, lbcAddress, amount, status, lbcTxid }] }`, `202` pending, `503` deposits short or treasury can't pay the fee |
 | `GET status?ethAddress=` | All deposits for a user (what the Wrap page polls) | `deposits: [{ lbcTxid, amount, confirmations, status: pending / ready / minted }]` |
 | `GET status?ethAddress=&lbcTxid=` | One deposit in detail | `status: not_found / no_payment / pending / confirmed / minted` |
 | `GET status?burnTxid=` | Unwrap progress | `status: not_found / reverted / pending / ready / paid` |
@@ -84,7 +84,9 @@ npm run deploy          # = npm run build && doctl serverless deploy .
 ## Known limits
 
 - Two simultaneous `unwrap` calls for the same burn both pass the marker check.
-  They select the same treasury coins, so the second broadcast is rejected as a
+  They select the same deposit and treasury coins, so the second broadcast is rejected as a
   double spend, but this relies on the hub's mempool view.
 - Payout fees come from the treasury; the user receives the full burned amount.
-- No sweep of deposit addresses into the treasury yet.
+  The treasury needs a small float of LBC for fees.
+- Deposit change below the dust limit (1000 dewies) goes to the fee, leaving
+  deposits that much short of supply.

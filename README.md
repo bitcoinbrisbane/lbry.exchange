@@ -72,11 +72,13 @@ deposits   m/44'/140'/0'/2/c0/c1/c2/c3/c4/c5/n  c0..c5 = the user's 160-bit Ethe
                                                  split into six 31-bit child indexes;
                                                  n = 0, 1, 2, … one fresh address per deposit
 legacy     m/44'/140'/0'/2/c0/c1/c2/c3/c4/c5    the old one-per-user address, still scanned
-treasury   m/44'/140'/1'/0/0                     pays out unwraps
+treasury   m/44'/140'/1'/0/0                     pays unwrap network fees
 ```
 
-Production treasury (mainnet LBC): `bU3qvW4ecNWnnjpZffgGZKBYWaUfGwYP3n`. Payout
-fees come from here, so it needs a float.
+Production treasury (mainnet LBC): `bU3qvW4ecNWnnjpZffgGZKBYWaUfGwYP3n`. It is
+a single fixed address that pays the network fee on every payout (its change
+returns to itself), so it needs a float; anyone can top it up from the
+[Donate](https://lbc.exchange/donate) page. It is not part of the reserves.
 
 Because a deposit address is a function of the recipient, LBC sent to it can
 only ever be minted to that recipient. Handing out an address needs no
@@ -135,9 +137,12 @@ user                front end              functions                 LBRY       
  │   paid, lbc txid     │◀─────────────────────│                       │             │
 ```
 
-The payout spends from the treasury, pays the full burned amount (fees come
-from the treasury), and carries the OP_RETURN marker. Repeating the request is
-harmless.
+The payout spends deposit-address coins for the burned amount (any change goes
+back to the deposit address it came from) and one or more treasury coins for the
+network fee (change back to the treasury), so the user receives the full burned
+amount and deposits fall by exactly what supply did. It carries the OP_RETURN
+marker, and because every payout spends a treasury coin the marker is always in
+the treasury's history. Repeating the request is harmless.
 
 ### Trust model
 
@@ -153,11 +158,10 @@ The liability side is already public: `Token.totalSupply()`. What needs proving
 is the asset side, that custodied LBC covers it, and that anyone can check it
 without trusting the operator.
 
-**Open the books.** Publish the two account extended public keys:
+**Open the books.** Publish the deposits account extended public key:
 
 ```
-deposits xpub   m/44'/140'/0'    every deposit address is /2/c0..c5 below it
-treasury xpub   m/44'/140'/1'    the treasury is /0/0 below it
+deposits xpub   m/44'/140'/0'    every deposit address is /2/c0..c5/n below it
 ```
 
 The deposit path is non-hardened below the account, so from the deposits xpub
@@ -177,14 +181,16 @@ root   = standard binary tree, odd node duplicated
 and post `(root, totalReserves, totalSupply, lbcHeight, ethBlock)` to a small
 `Reserves` attestation contract. A `reserves` endpoint serves the leaves,
 totals and a proof for any address, and the UI shows the ratio. A verifier with
-the xpubs recomputes the tree from scratch; a light client checks that the
-treasury or their own deposit address is in the committed set.
+the xpub recomputes the tree from scratch; a light client checks that their own
+deposit address is in the committed set.
 
-**What 1:1 means here.** At any moment `reserves ≥ supply` should hold:
-confirmed-but-unminted deposits and burned-but-unpaid unwraps both push reserves
-above supply, never below. The one thing that erodes it is payout fees, which
-come from the treasury, so the operator must top up fees and the attestation
-makes any shortfall visible.
+**What 1:1 means here.** Reserves are the deposit addresses only; the treasury
+is not counted. At any moment `deposits ≥ supply` should hold:
+confirmed-but-unminted deposits and burned-but-unpaid unwraps both push deposits
+above supply, never below. Payout fees come from the treasury, not from
+deposits, so they don't erode it; the operator keeps the treasury topped up for
+fees, and an unpaid unwrap shows up as "treasury has too little LBC to pay the
+network fee".
 
 ## Plan
 
@@ -206,9 +212,9 @@ Next
       front end on App Platform
 - [x] Functions deployed to DigitalOcean with a production custody seed
 - [ ] End-to-end test with a small LBC deposit against the live site
-- [ ] Sweep function: enumerate deposit addresses from `Wrapped` events and
-      consolidate into the treasury
-- [x] Proof of 1:1: `reserves` endpoint (supply vs treasury + deposit
+- [x] Unwrap payouts spend deposit coins directly (no sweep needed); the
+      treasury only pays fees
+- [x] Proof of 1:1: `reserves` endpoint (supply vs deposit
       balances, Merkle root, published xpubs) and the Verify page, which
       recomputes the root in the browser
 - [ ] `Reserves` attestation contract: post signed roots on Ethereum

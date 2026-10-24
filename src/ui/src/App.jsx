@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router-d
 import { Header } from "./components/Header";
 import { IntroBanner } from "./components/IntroBanner";
 import { PageContainer } from "./components/PageContainer";
+import { Donate } from "./pages/Donate";
 import { Unwrap } from "./pages/Unwrap";
 import { Verify } from "./pages/Verify";
 import { Wrap } from "./pages/Wrap";
@@ -20,6 +21,7 @@ export function App() {
               <Route path="/wrap" element={<Navigate to="/" replace />} />
               <Route path="/unwrap" element={<Unwrap />} />
               <Route path="/verify" element={<Verify />} />
+              <Route path="/donate" element={<Donate />} />
             </Routes>
           </VStack>
         </PageContainer>

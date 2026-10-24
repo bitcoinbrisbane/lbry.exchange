@@ -12,6 +12,7 @@ import {
   Input,
   InputGroup,
   InputRightElement,
+  Link,
   Stack,
   Text,
   VStack,
@@ -19,6 +20,7 @@ import {
 } from "@chakra-ui/react";
 import { ethers } from "ethers";
 import { useCallback, useEffect, useState } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import { ConnectWallet } from "../components/ConnectWallet";
 import { Address } from "../components/Address";
 import { ContractDetails } from "../components/ContractDetails";
@@ -217,8 +219,12 @@ export function Unwrap() {
           </Button>
           {config && (
             <Text textStyle="helper">
-              LBC is paid from the bridge treasury after {config.ethMinConfirmations} Ethereum confirmations. You pay
-              the Ethereum gas; the payout fee is covered.
+              LBC is paid from the bridge reserves after {config.ethMinConfirmations} Ethereum confirmations. You pay
+              the Ethereum gas; the LBRY fee is covered by the{" "}
+              <Link as={RouterLink} to="/donate">
+                fee fund
+              </Link>
+              .
             </Text>
           )}
         </Stack>

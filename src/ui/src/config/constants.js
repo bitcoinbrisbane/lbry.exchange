@@ -9,3 +9,7 @@ export const BRIDGE_ADDRESS = import.meta.env.VITE_BRIDGE_ADDRESS || "0xa3A3E830
 // Read-only Ethereum RPC endpoint. Used to query contracts without a
 // connected wallet. Falls back to the injected wallet provider when unset.
 export const ETH_RPC_URL = import.meta.env.VITE_ETH_RPC_URL || "";
+
+// LBC address that pays unwrap network fees (the treasury, m/44'/140'/1'/0/0). Fixed here rather than
+// read from the API so a tampered response cannot redirect donations.
+export const FEE_ADDRESS = import.meta.env.VITE_FEE_ADDRESS || "bU3qvW4ecNWnnjpZffgGZKBYWaUfGwYP3n";
