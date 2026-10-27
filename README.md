@@ -4,7 +4,7 @@ A custodial 1:1 bridge between native **LBC** (LBRY Credits) and **wLBC**, an
 ERC-20 on Ethereum mainnet. Deposit LBC, mint wLBC. Burn wLBC, get LBC back.
 
 ```
-contracts/      Token.sol (wLBC), Bridge.sol (mint on verified deposit, burn to unwrap), Sale.sol
+contracts/      Token.sol (wLBC), Bridge.sol (mint on verified deposit, burn to unwrap)
 src/functions/  DigitalOcean Functions (TypeScript): deposit addresses, mint approvals, LBC payouts
 src/ui/         React + Chakra front end: Wrap and Unwrap pages
 test/           Hardhat tests
@@ -223,8 +223,6 @@ Next
 Later
 
 - [ ] Move `signer` to a multisig or threshold scheme
-- [ ] Decide the future of `Sale.sol` (USDC-priced LBC sales), which is
-      independent of the bridge
 
 ## Develop
 
@@ -270,6 +268,31 @@ npx hardhat ignition deploy ignition/modules/Bridge.js --network mainnet --verif
 
 The deployer key is `PRIVATE_KEY` in the root `.env` and, with a `0x` prefix,
 `SIGNER_PRIVATE_KEY` for the functions.
+
+### Uniswap pool
+
+`scripts/create-pool.js` creates a wLBC/USDC or wLBC/USDT Uniswap V3 pool (1%
+fee tier) at a chosen starting price and adds a full-range position from the
+deployer's wallet. The deployer must already hold the wLBC (wrapped through the
+bridge, so it stays 1:1 backed) and the quote token; the quote side is derived
+from the price.
+
+```sh
+# Rehearse on a mainnet fork as the real deployer
+DRY_RUN=1 FORK=1 POOL_QUOTE=USDC POOL_PRICE=0.01 POOL_WLBC=10000 LP_RECIPIENT=0x... npx hardhat run scripts/create-pool.js
+# Print the plan against mainnet, then send it
+POOL_QUOTE=USDC POOL_PRICE=0.01 POOL_WLBC=10000 LP_RECIPIENT=0x... npx hardhat run scripts/create-pool.js --network mainnet
+CONFIRM=1 POOL_QUOTE=USDC POOL_PRICE=0.01 POOL_WLBC=10000 LP_RECIPIENT=0x... npx hardhat run scripts/create-pool.js --network mainnet
+```
+
+`POOL_QUOTE` is `USDC` or `USDT`, `POOL_PRICE` is quote per wLBC and
+`LP_RECIPIENT` receives the position NFT; point it at the LP custodian, not the
+deployer. Every run first lists each wLBC pool already on Uniswap V2 or V3
+against either quote, with what it holds. Another pool in the chosen pair stops
+the run unless `ALLOW_OTHER_POOLS=1`, and an existing pool at the same tier is
+reused only if its price is within 1% of `POOL_PRICE`. V4 pools can't be
+enumerated; check the Uniswap app for those. The price math is in
+`scripts/lib/univ3.js`, tested by `test/univ3.js`.
 
 ### Secrets
 
