@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Primary meta. Per-route title, description and canonical are updated in src/hooks/usePageMeta.js. -->
+    <!-- Home page values. The build writes a copy of this file per route in src/config/pages.js with that route's
+         title, description and URL (vite.config.js); src/hooks/usePageMeta.js keeps them right as the app navigates. -->
     <title>Wrap LBC to wLBC on Ethereum | lbc.exchange</title>
     <meta
       name="description"
@@ -38,7 +39,7 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="lbc.exchange" />
-    <meta property="og:locale" content="en" />
+    <meta property="og:locale" content="en_AU" />
     <meta property="og:url" content="https://lbc.exchange/" />
     <meta property="og:title" content="Bring LBC to Ethereum DeFi | lbc.exchange" />
     <meta
@@ -84,46 +85,22 @@
             "description": "Wrap LBRY Credits (LBC) into wLBC, an ERC-20 token backed 1:1 by custodied LBC, and unwrap it back to native LBC.",
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
             "isPartOf": { "@id": "https://lbc.exchange/#website" }
-          },
-          {
-            "@type": "FAQPage",
-            "mainEntity": [
-              {
-                "@type": "Question",
-                "name": "What is wLBC?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "wLBC is an ERC-20 token on Ethereum backed 1:1 by LBRY Credits (LBC) held in custody, the same model as wBTC for Bitcoin. Contract: 0xB0F2C4f8b7c0f088f7844947EcBf1220bFCa08C1."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "How do I wrap LBC?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "Connect an Ethereum wallet, send LBC to the personal deposit address shown, and after 6 LBRY confirmations mint the same amount of wLBC to your wallet."
-                }
-              },
-              {
-                "@type": "Question",
-                "name": "How do I get native LBC back?",
-                "acceptedAnswer": {
-                  "@type": "Answer",
-                  "text": "On the Unwrap page, burn wLBC and enter an LBRY address. After 12 Ethereum confirmations the same amount of native LBC is sent to that address."
-                }
-              }
-            ]
           }
         ]
       }
     </script>
+    <!-- The home page's FAQPage structured data is added by the build, from src/config/faq.js. -->
   </head>
   <body>
     <div id="root"></div>
-    <!-- Readable without JavaScript, for crawlers and no-JS visitors. -->
+    <!-- Readable without JavaScript, for crawlers and no-JS visitors. The build sets the h1 and first paragraph per route. -->
     <noscript>
       <main style="font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1rem">
         <h1>Wrap LBC to wLBC on Ethereum</h1>
+        <p>
+          Bridge LBRY Credits (LBC) to Ethereum. Wrap native LBC into wLBC, an ERC-20 token backed 1:1, to hold, trade
+          and use across DeFi, and redeem it for LBC any time.
+        </p>
         <p>
           lbc.exchange bridges native LBRY Credits (LBC) to wLBC, an ERC-20 token on Ethereum backed 1:1 by LBC held in
           custody, the same model as wBTC. Hold it in any Ethereum wallet, trade it on decentralised exchanges, use it
@@ -132,6 +109,10 @@
         <p>
           wLBC contract: 0xB0F2C4f8b7c0f088f7844947EcBf1220bFCa08C1. Bridge: 0xa3A3E8304C88b017153bA5dFCCDACCB7116a185f.
         </p>
+        <nav aria-label="Pages">
+          <a href="/">Wrap LBC</a> · <a href="/unwrap">Unwrap wLBC</a> · <a href="/trade">Trade wLBC</a> ·
+          <a href="/verify">Verify reserves</a> · <a href="/donate">Donate</a>
+        </nav>
         <p>This app needs JavaScript and an Ethereum wallet.</p>
       </main>
     </noscript>

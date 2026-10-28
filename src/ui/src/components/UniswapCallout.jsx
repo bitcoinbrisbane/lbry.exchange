@@ -10,8 +10,8 @@ export function UniswapCallout() {
         Trade wLBC on Uniswap
       </Heading>
       <Text textStyle="helper" mb={4}>
-        Already holding wLBC, or want some without wrapping? It trades on Uniswap V3 on Ethereum, paired with{" "}
-        {UNISWAP.quoteSymbol} at the {UNISWAP.feeTier} fee tier.
+        Already holding wLBC, or want some without wrapping? It trades on Uniswap {UNISWAP.version} on Ethereum, paired
+        with {UNISWAP.quoteSymbol} at the {UNISWAP.feeTier} fee tier.
       </Text>
       <Stack direction={{ base: "column", sm: "row" }} spacing={3}>
         <Button as="a" href={UNISWAP.swapUrl} target="_blank" rel="noopener noreferrer" variant="solid">

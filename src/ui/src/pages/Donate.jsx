@@ -7,12 +7,7 @@ import { lbcAddressUrl } from "../lib/contracts";
 
 /** The fee fund: LBC sent here pays the network fee on every unwrap payout. */
 export function Donate() {
-  usePageMeta({
-    title: "Donate LBC for bridge fees | lbc.exchange",
-    description:
-      "Help keep LBC to wLBC unwraps free: donate LBC to the bridge's fee address, which pays the LBRY network fee on every payout.",
-    path: "/donate",
-  });
+  usePageMeta("/donate");
   return (
     <VStack spacing={8} align="stretch">
       <VStack align="stretch" spacing={2}>

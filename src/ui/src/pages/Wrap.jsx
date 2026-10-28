@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ConnectWallet } from "../components/ConnectWallet";
 import { DepositCard } from "../components/DepositCard";
 import { DepositList } from "../components/DepositList";
+import { Faq } from "../components/Faq";
 import { LastChecked } from "../components/LastChecked";
 import { ContractDetails } from "../components/ContractDetails";
 import { UniswapCallout } from "../components/UniswapCallout";
@@ -28,12 +29,7 @@ const POLL_MS = 30_000;
 const depositCacheKey = (address) => `deposit-v2:${address.toLowerCase()}`;
 
 export function Wrap() {
-  usePageMeta({
-    title: "Wrap LBC to wLBC on Ethereum | lbc.exchange",
-    description:
-      "Bridge LBRY Credits (LBC) to Ethereum. Wrap native LBC into wLBC, an ERC-20 token backed 1:1, to hold, trade and use across DeFi, and redeem it for LBC any time.",
-    path: "/",
-  });
+  usePageMeta("/");
   const { address } = useWallet();
   const { config, error: configError } = useBridgeConfig();
   const toast = useToast();
@@ -152,7 +148,7 @@ export function Wrap() {
     <VStack spacing={8} align="stretch">
       <VStack align="stretch" spacing={2}>
         <Heading as="h1" size="xl">
-          Wrap LBC
+          Wrap LBC to wLBC
         </Heading>
         <Text textStyle="lead">
           Send LBC to your personal deposit address, then mint the same amount of wLBC to your Ethereum wallet.
@@ -222,6 +218,7 @@ export function Wrap() {
       )}
 
       <UniswapCallout />
+      <Faq />
     </VStack>
   );
 }
