@@ -34,6 +34,9 @@ export function Header() {
             <Link as={NavLink} to="/unwrap" variant="nav">
               Unwrap
             </Link>
+            <Link as={NavLink} to="/trade" variant="nav">
+              Trade
+            </Link>
             <Link as={NavLink} to="/verify" variant="nav">
               Verify
             </Link>
