@@ -6,6 +6,7 @@ import { DepositCard } from "../components/DepositCard";
 import { DepositList } from "../components/DepositList";
 import { LastChecked } from "../components/LastChecked";
 import { ContractDetails } from "../components/ContractDetails";
+import { UniswapCallout } from "../components/UniswapCallout";
 import { useWallet } from "../contexts/WalletContext";
 import { useBridgeConfig } from "../hooks/useBridgeConfig";
 import { usePageMeta } from "../hooks/usePageMeta";
@@ -219,6 +220,8 @@ export function Wrap() {
           />
         </>
       )}
+
+      <UniswapCallout />
     </VStack>
   );
 }
