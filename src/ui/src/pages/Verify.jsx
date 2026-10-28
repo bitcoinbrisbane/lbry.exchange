@@ -128,12 +128,7 @@ function MerkleCard({ data }) {
 }
 
 export function Verify() {
-  usePageMeta({
-    title: "Verify wLBC reserves | lbc.exchange",
-    description:
-      "Proof of reserves for wLBC: circulating supply against LBC held in deposit addresses, 1:1, with a Merkle root you can recompute in your browser.",
-    path: "/verify",
-  });
+  usePageMeta("/verify");
 
   const fetchReserves = useCallback(async () => {
     const res = await bridgeApi.reserves();

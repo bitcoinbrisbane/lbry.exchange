@@ -21,12 +21,7 @@ function Fact({ label, value, hint }) {
 
 /** Where to trade wLBC: the Uniswap market, with the contract addresses to check against. */
 export function Trade() {
-  usePageMeta({
-    title: "Trade wLBC on Uniswap | lbc.exchange",
-    description:
-      "wLBC trades on Uniswap V3 on Ethereum, paired with USDT. Swap links and the token and bridge contract addresses to verify before trading.",
-    path: "/trade",
-  });
+  usePageMeta("/trade");
 
   return (
     <VStack spacing={8} align="stretch">
@@ -35,14 +30,14 @@ export function Trade() {
           Trade wLBC on Uniswap
         </Heading>
         <Text textStyle="lead">
-          wLBC is wrapped LBRY Credits, minted 1:1 against LBC by the bridge. It trades on Uniswap V3 on Ethereum, so you
-          can buy or sell it for {UNISWAP.quoteSymbol} without going through the bridge.
+          wLBC is wrapped LBRY Credits, minted 1:1 against LBC by the bridge. It trades on Uniswap {UNISWAP.version} on
+          Ethereum, so you can buy or sell it for {UNISWAP.quoteSymbol} without going through the bridge.
         </Text>
       </VStack>
 
       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
-        <Fact label="Pair" value={`wLBC / ${UNISWAP.quoteSymbol}`} hint="Uniswap V3" />
-        <Fact label="Fee tier" value={UNISWAP.feeTier} hint="Long-tail tier" />
+        <Fact label="Pair" value={`wLBC / ${UNISWAP.quoteSymbol}`} hint={`Uniswap ${UNISWAP.version}`} />
+        <Fact label="Fee tier" value={UNISWAP.feeTier} />
         <Fact label="Network" value="Ethereum" hint="Mainnet" />
       </SimpleGrid>
 

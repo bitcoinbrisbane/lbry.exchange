@@ -10,12 +10,13 @@ export const BRIDGE_ADDRESS = import.meta.env.VITE_BRIDGE_ADDRESS || "0xa3A3E830
 // connected wallet. Falls back to the injected wallet provider when unset.
 export const ETH_RPC_URL = import.meta.env.VITE_ETH_RPC_URL || "";
 
-// wLBC trades on Uniswap V3 (mainnet), paired with USDT at the 1% tier. The
+// wLBC trades on Uniswap V4 (mainnet), paired with USDT at the 0.25% tier (README "Liquidity"). The
 // links are keyed off the token address so they stay correct as pools are
 // added, and the Uniswap token page carries the live price and liquidity.
 export const UNISWAP = {
+  version: "V4",
   quoteSymbol: "USDT",
-  feeTier: "1%",
+  feeTier: "0.25%",
   tokenUrl: `https://app.uniswap.org/explore/tokens/ethereum/${WLBC_ADDRESS.toLowerCase()}`,
   swapUrl: `https://app.uniswap.org/swap?outputCurrency=${WLBC_ADDRESS}&chain=ethereum`,
 };
