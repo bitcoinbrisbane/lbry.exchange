@@ -21,6 +21,10 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: 31337,
+      // FORK=1 runs the in-process chain on a fork of Ethereum mainnet, so
+      // scripts that touch live contracts (scripts/create-pool.js) can be
+      // rehearsed against real state.
+      ...(process.env.FORK ? { forking: { url: MAINNET_RPC_URL || "https://ethereum-rpc.publicnode.com" } } : {}),
       // DRY_RUN=1 puts the real deployer key on the in-process chain with a
       // funded balance, so a deployment can be rehearsed as that account.
       ...(process.env.DRY_RUN && PRIVATE_KEY
