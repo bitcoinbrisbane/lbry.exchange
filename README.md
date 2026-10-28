@@ -261,6 +261,23 @@ Deployed 21 October 2026 with `ignition/modules/Bridge.js` and source-verified o
 Etherscan; the Ignition journal is in `ignition/deployments/chain-1`. `Bridge.signer()` and both `owner()`s are the
 deployer.
 
+### Liquidity
+
+wLBC/USDT trades in a Uniswap V4 pool on Ethereum mainnet, created 27 October 2026
+([tx](https://etherscan.io/tx/0x9ce47459c27fccb8cf11576bfaeda3cc78c3c0923b10959a843926c0cdc4d358)).
+
+| Field | Value |
+| --- | --- |
+| Pool id | [`0xb94ad38df39255149c9491e1f28152989db850a9a47acf5b2eb6139ef437eba1`](https://app.uniswap.org/explore/pools/ethereum/0xb94ad38df39255149c9491e1f28152989db850a9a47acf5b2eb6139ef437eba1) |
+| currency0 | wLBC [`0xB0F2C4f8b7c0f088f7844947EcBf1220bFCa08C1`](https://etherscan.io/token/0xB0F2C4f8b7c0f088f7844947EcBf1220bFCa08C1) |
+| currency1 | USDT [`0xdAC17F958D2ee523a2206206994597C13D831ec7`](https://etherscan.io/token/0xdAC17F958D2ee523a2206206994597C13D831ec7) |
+| Fee / tick spacing | 0.25% (`2500`) / `25` |
+| Hooks | none (`0x0000000000000000000000000000000000000000`) |
+| PoolManager | [`0x000000000004444c5dc75cB358380D2e3dE08A90`](https://etherscan.io/address/0x000000000004444c5dc75cB358380D2e3dE08A90) |
+| Position | [#484982](https://etherscan.io/nft/0xbD216513d74C8cf14cf4747E6AaA6420FF64ee9e/484982) on the V4 PositionManager, range $0.0005–$0.002 per wLBC |
+
+The pool opened at $0.001 per wLBC with about 110,000 wLBC and 110 USDT.
+
 Rehearse and price a deployment before sending it:
 
 ```sh
