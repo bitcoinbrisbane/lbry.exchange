@@ -39,3 +39,9 @@ static_sites:
       - key: VITE_ETH_RPC_URL
         scope: BUILD_TIME
         value: https://ethereum-rpc.publicnode.com
+      # WalletConnect (Reown AppKit) project ID from https://dashboard.reown.com, with lbc.exchange and
+      # www.lbc.exchange on its domain allowlist. It ships in the public bundle, so it is not a secret.
+      # Without it the site only connects injected wallets and mobile browsers cannot connect.
+      # - key: VITE_REOWN_PROJECT_ID
+      #   scope: BUILD_TIME
+      #   value: <project id>

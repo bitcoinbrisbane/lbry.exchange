@@ -234,6 +234,12 @@ cd src/functions && yarn && yarn test && yarn build
 cd src/ui && yarn && yarn dev
 ```
 
+Wallets connect through [Reown AppKit](https://docs.reown.com/appkit/overview) (WalletConnect), so mobile
+browsers can use Trust Wallet, MetaMask Mobile and others by deep link or QR code. It needs
+`VITE_REOWN_PROJECT_ID` in `src/ui/.env` (and in `.do/app.yaml` for production) from
+[dashboard.reown.com](https://dashboard.reown.com), with the site's domains on the project's allowlist.
+Without it the UI falls back to injected wallets only.
+
 Deploy contracts with Ignition (see Deployments below):
 
 ```sh
