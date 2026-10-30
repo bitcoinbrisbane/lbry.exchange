@@ -1,5 +1,6 @@
 import { Box, Button, Heading, HStack, Link, Stack, Text, useToast } from "@chakra-ui/react";
 import { BRIDGE_ADDRESS, WLBC_ADDRESS } from "../config/constants";
+import { useWallet } from "../contexts/WalletContext";
 import { addTokenToWallet, ethAddressUrl, ethContractUrl } from "../lib/contracts";
 import { Address } from "./Address";
 
@@ -19,10 +20,12 @@ function Row({ label, children }) {
 /** wLBC and Bridge contract addresses, "add to wallet" and a one-line note, in one compact section. */
 export function ContractDetails({ chainId = 1, tokenAddress = WLBC_ADDRESS, bridgeAddress = BRIDGE_ADDRESS, note }) {
   const toast = useToast();
+  const { walletProvider, connectWallet } = useWallet();
 
   const add = async () => {
+    if (!walletProvider) return connectWallet();
     try {
-      const added = await addTokenToWallet(tokenAddress);
+      const added = await addTokenToWallet(tokenAddress, walletProvider);
       if (added) toast({ title: "wLBC added to your wallet", status: "success", duration: 4000 });
     } catch (err) {
       toast({ title: "Could not add wLBC", description: err?.message || String(err), status: "error", duration: 6000 });
