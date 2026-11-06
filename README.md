@@ -317,6 +317,28 @@ reused only if its price is within 1% of `POOL_PRICE`. V4 pools can't be
 enumerated; check the Uniswap app for those. The price math is in
 `scripts/lib/univ3.js`, tested by `test/univ3.js`.
 
+### Adding a V4 position
+
+`scripts/add-v4-position.js` opens a new position in the wLBC/USDT V4 pool
+(see Liquidity) over a price range you choose, paid for and signed by the key in
+`LP_PRIVATE_KEY` in the root `.env`. A range above the current price takes wLBC
+only, one below takes USDT only, and one spanning the price takes both: give
+either amount and the other is derived.
+
+```sh
+# Rehearse on a mainnet fork (the key keeps its real balances and is given gas)
+FORK=1 POS_MIN_PRICE=0.0004 POS_MAX_PRICE=0.000597 POS_USDT=50 npx hardhat run scripts/add-v4-position.js
+# Print the plan against mainnet, then send it
+POS_MIN_PRICE=0.0004 POS_MAX_PRICE=0.000597 POS_USDT=50 npx hardhat run scripts/add-v4-position.js --network mainnet
+CONFIRM=1 POS_MIN_PRICE=0.0004 POS_MAX_PRICE=0.000597 POS_USDT=50 npx hardhat run scripts/add-v4-position.js --network mainnet
+```
+
+Prices are USDT per wLBC and the range is widened to the pool's tick spacing.
+`POS_WLBC` and `POS_USDT` are the most to deposit, and `POS_OWNER` receives the
+NFT (default: the LP key's address). Tokens are paid through Permit2 with the
+same mint actions the Uniswap app sends. The math is in `scripts/lib/univ4.js`,
+tested by `test/univ4.js` against a mint the app made.
+
 ### Secrets
 
 `.env` files are gitignored. To carry them between machines they are encrypted

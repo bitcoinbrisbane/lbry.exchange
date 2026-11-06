@@ -1,23 +1,8 @@
 import { Box, Button, Heading, HStack, SimpleGrid, Stack, Text, VStack } from "@chakra-ui/react";
 import { ContractDetails } from "../components/ContractDetails";
+import { Fact } from "../components/Fact";
 import { UNISWAP } from "../config/constants";
 import { usePageMeta } from "../hooks/usePageMeta";
-
-function Fact({ label, value, hint }) {
-  return (
-    <Box layerStyle="card" p={4}>
-      <Text textStyle="helper">{label}</Text>
-      <Text fontSize="2xl" fontWeight="semibold" mt={1}>
-        {value}
-      </Text>
-      {hint && (
-        <Text textStyle="helper" mt={1}>
-          {hint}
-        </Text>
-      )}
-    </Box>
-  );
-}
 
 /** Where to trade wLBC: the Uniswap market, with the contract addresses to check against. */
 export function Trade() {

@@ -5,6 +5,7 @@ import { IntroBanner } from "./components/IntroBanner";
 import { PageContainer } from "./components/PageContainer";
 import { Donate } from "./pages/Donate";
 import { NotFound } from "./pages/NotFound";
+import { Supply } from "./pages/Supply";
 import { Trade } from "./pages/Trade";
 import { Unwrap } from "./pages/Unwrap";
 import { Verify } from "./pages/Verify";
@@ -23,6 +24,7 @@ export function App() {
               <Route path="/wrap" element={<Navigate to="/" replace />} />
               <Route path="/unwrap" element={<Unwrap />} />
               <Route path="/trade" element={<Trade />} />
+              <Route path="/supply" element={<Supply />} />
               <Route path="/verify" element={<Verify />} />
               <Route path="/donate" element={<Donate />} />
               <Route path="*" element={<NotFound />} />

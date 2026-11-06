@@ -25,6 +25,11 @@ export const PAGES = {
     description:
       "wLBC trades on Uniswap V4 on Ethereum, paired with USDT. Swap links and the token and bridge contract addresses to verify before trading.",
   },
+  "/supply": {
+    name: "Supply wLBC liquidity on Uniswap",
+    description:
+      "Add wLBC and USDT to the Uniswap V4 pool over a price range you choose and earn the 0.25% fee on trades in that range.",
+  },
   "/verify": {
     name: "Verify wLBC reserves",
     description:
