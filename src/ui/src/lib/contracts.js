@@ -58,20 +58,10 @@ export async function verifyDepositAddress({ ethAddress, depositAddress, signatu
   }
 }
 
-export async function getSigner() {
-  if (!window.ethereum) throw new Error("No wallet found. Install MetaMask or another browser wallet.");
-  return new ethers.BrowserProvider(window.ethereum).getSigner();
-}
-
-/** Ask the wallet to switch to `chainId` when it is on another chain. */
-export async function ensureChain(chainId) {
-  if (!chainId || !window.ethereum) return;
-  const current = Number(await window.ethereum.request({ method: "eth_chainId" }));
-  if (current === Number(chainId)) return;
-  await window.ethereum.request({
-    method: "wallet_switchEthereumChain",
-    params: [{ chainId: "0x" + Number(chainId).toString(16) }],
-  });
+/** A signer from the connected wallet's EIP-1193 provider (WalletConnect or injected). */
+export async function getSigner(walletProvider) {
+  if (!walletProvider) throw new Error("Connect a wallet first.");
+  return new ethers.BrowserProvider(walletProvider).getSigner();
 }
 
 const EXPLORERS = {
@@ -93,9 +83,9 @@ export const lbcAddressUrl = (address) => `https://explorer.lbry.com/address/${a
  * Ask the wallet to track wLBC (EIP-747 wallet_watchAsset). Resolves true when the
  * user accepts. Wallets that already track the token simply confirm again.
  */
-export async function addTokenToWallet(tokenAddress) {
-  if (!window.ethereum) throw new Error("No wallet found. Install MetaMask or another browser wallet.");
-  return window.ethereum.request({
+export async function addTokenToWallet(tokenAddress, walletProvider) {
+  if (!walletProvider) throw new Error("Connect a wallet first.");
+  return walletProvider.request({
     method: "wallet_watchAsset",
     params: {
       type: "ERC20",
@@ -103,7 +93,7 @@ export async function addTokenToWallet(tokenAddress) {
         address: tokenAddress,
         symbol: "wLBC",
         decimals: 8,
-        image: `${window.location.origin}/lbry-logo.svg`,
+        image: `${window.location.origin}/icon-512.png`,
       },
     },
   });

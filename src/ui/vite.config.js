@@ -74,6 +74,10 @@ export default defineConfig({
               test: /node_modules[\\/](@chakra-ui|@emotion|framer-motion|motion-dom|motion-utils)[\\/]/,
             },
             { name: "ethers", test: /node_modules[\\/](ethers|@noble|@adraffy)[\\/]/ },
+            {
+              name: "wallet",
+              test: /node_modules[\\/](@reown|@walletconnect|@lit|lit|lit-html|lit-element|viem|ox|valtio|proxy-compare)[\\/]/,
+            },
           ],
         },
       },

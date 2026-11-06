@@ -16,7 +16,6 @@ import { bridgeApi, errorOf } from "../lib/bridgeApi";
 import {
   BRIDGE_ABI,
   addTokenToWallet,
-  ensureChain,
   ethTxUrl,
   getSigner,
   UnsignedAddressError,
@@ -30,7 +29,7 @@ const depositCacheKey = (address) => `deposit-v2:${address.toLowerCase()}`;
 
 export function Wrap() {
   usePageMeta("/");
-  const { address } = useWallet();
+  const { address, walletProvider, ensureChain } = useWallet();
   const { config, error: configError } = useBridgeConfig();
   const toast = useToast();
   const [deposit, setDeposit] = useState(() => (address ? cache.get(depositCacheKey(address)) : null));
@@ -111,7 +110,7 @@ export function Wrap() {
       if (!approval.ok) throw new Error(errorOf(approval, "Approval refused"));
       const { to, amount, lbcTxid, signature } = approval.data.wrapArgs;
       await ensureChain(approval.data.chainId);
-      const signer = await getSigner();
+      const signer = await getSigner(walletProvider);
       const bridge = new ethers.Contract(approval.data.bridgeAddress, BRIDGE_ABI, signer);
       const tx = await bridge.wrap(to, BigInt(amount), lbcTxid, signature);
       toast({
@@ -134,7 +133,7 @@ export function Wrap() {
       const key = `token-added:${address.toLowerCase()}`;
       if (!cache.get(key)) {
         cache.set(key, true);
-        addTokenToWallet(approval.data.tokenAddress || config?.tokenAddress).catch(() => null);
+        addTokenToWallet(approval.data.tokenAddress || config?.tokenAddress, walletProvider).catch(() => null);
       }
     } catch (err) {
       const message = err?.shortMessage || err?.message || String(err);

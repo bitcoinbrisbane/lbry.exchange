@@ -29,7 +29,7 @@ import { useBridgeConfig } from "../hooks/useBridgeConfig";
 import { usePageMeta } from "../hooks/usePageMeta";
 import { usePolling } from "../hooks/usePolling";
 import { bridgeApi } from "../lib/bridgeApi";
-import { BRIDGE_ABI, TOKEN_ABI, ensureChain, ethTxUrl, getReadProvider, getSigner, lbcTxUrl } from "../lib/contracts";
+import { BRIDGE_ABI, TOKEN_ABI, ethTxUrl, getReadProvider, getSigner, lbcTxUrl } from "../lib/contracts";
 import { cache, formatLbc, looksLikeLbcAddress, parseLbc } from "../lib/format";
 
 const POLL_MS = 30_000;
@@ -37,7 +37,7 @@ const COLORS = { paid: "green", ready: "blue", pending: "yellow", not_found: "gr
 
 export function Unwrap() {
   usePageMeta("/unwrap");
-  const { address } = useWallet();
+  const { address, walletProvider, ensureChain } = useWallet();
   const { config } = useBridgeConfig();
   const toast = useToast();
   const [balance, setBalance] = useState(null);
@@ -102,7 +102,7 @@ export function Unwrap() {
     setBusy(true);
     try {
       await ensureChain(config.chainId);
-      const signer = await getSigner();
+      const signer = await getSigner(walletProvider);
       const bridge = new ethers.Contract(config.bridgeAddress, BRIDGE_ABI, signer);
       const tx = await bridge.unwrap(dewies, lbcAddress.trim());
       toast({
