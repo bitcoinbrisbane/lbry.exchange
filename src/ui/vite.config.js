@@ -1,6 +1,7 @@
 import react from "@vitejs/plugin-react";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import { FAQ } from "./src/config/faq.js";
 import { PAGES, SITE_URL, pageTitle, socialMeta } from "./src/config/pages.js";
@@ -60,8 +61,26 @@ function routePages() {
   };
 }
 
+const here = path.dirname(fileURLToPath(import.meta.url));
+// The Sweep page signs with the same LBRY wallet core the functions use, imported from where it is vendored.
+const lbcDir = path.resolve(here, "../functions/src/lib/lbc");
+
+/** Resolves the wallet core's packages (@noble/*, @scure/*) from this app's node_modules, not the functions'. */
+function lbcDeps() {
+  return {
+    name: "lbc-deps",
+    enforce: "pre",
+    resolveId(source, importer, options) {
+      if (!importer || !importer.startsWith(lbcDir) || source.startsWith(".")) return null;
+      return this.resolve(source, path.join(here, "src/main.jsx"), { ...options, skipSelf: true });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), routePages()],
+  plugins: [lbcDeps(), react(), routePages()],
+  resolve: { alias: { "@lbc": lbcDir } },
+  server: { fs: { allow: [path.resolve(here, "..")] } },
   build: {
     rolldownOptions: {
       output: {

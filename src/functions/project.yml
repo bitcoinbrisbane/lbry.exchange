@@ -16,6 +16,8 @@
 #   GET   .../bridge/status  ?ethAddress=&lbcTxid=  |  ?burnTxid=
 #   GET   .../bridge/config
 #   GET   .../bridge/reserves   proof of reserves: supply, balances, Merkle root
+#   GET   .../bridge/utxos   ?address=a,b,c     unspent coins, for the browser's sweep
+#   POST  .../bridge/broadcast { ethAddress, hex }  relays a sweep into the sender's deposit address
 
 environment:
   ETH_RPC_URL: "${ETH_RPC_URL}"
@@ -81,6 +83,24 @@ packages:
           memory: 128
 
       - name: reserves
+        binary: false
+        main: main
+        runtime: "nodejs:24"
+        web: true
+        limits:
+          timeout: 30000
+          memory: 256
+
+      - name: utxos
+        binary: false
+        main: main
+        runtime: "nodejs:24"
+        web: true
+        limits:
+          timeout: 30000
+          memory: 256
+
+      - name: broadcast
         binary: false
         main: main
         runtime: "nodejs:24"

@@ -52,6 +52,8 @@ With DO's default prefix `/api/v1/web/bridge/`:
 | `GET status?burnTxid=` | Unwrap progress | `status: not_found / reverted / pending / ready / paid` |
 | `GET config` | Chain ids, addresses, thresholds, treasury | |
 | `GET reserves` | Proof of reserves | `{ supply, reserves, backingBps, fullyBacked, merkle: { root, leaves }, xpubs }` |
+| `GET utxos?address=a,b,c` | Unspent coins of up to 60 addresses, for the Sweep page | `{ tipHeight, feePerByte, addresses: [{ address, used, utxos }] }` |
+| `POST broadcast` `{ ethAddress, hex }` | Relays a sweep signed in the browser; accepts only one output paying the sender's own deposit address | `{ ethAddress, txid }` |
 
 Amounts are decimal strings in dewies (1e-8 LBC), which is also the wLBC unit.
 

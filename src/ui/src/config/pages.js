@@ -30,6 +30,11 @@ export const PAGES = {
     description:
       "Add wLBC and USDT to the Uniswap V4 pool over a price range you choose and earn the 0.25% fee on trades in that range.",
   },
+  "/sweep": {
+    name: "Sweep LBC into the bridge",
+    description:
+      "Move all the LBC in an LBRY seed, wallet file or private key into your bridge deposit address in one transaction, signed in your browser, so you can mint wLBC.",
+  },
   "/verify": {
     name: "Verify wLBC reserves",
     description:

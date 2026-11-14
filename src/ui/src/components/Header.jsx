@@ -40,6 +40,9 @@ export function Header() {
             <Link as={NavLink} to="/supply" variant="nav">
               Supply
             </Link>
+            <Link as={NavLink} to="/sweep" variant="nav">
+              Sweep
+            </Link>
             <Link as={NavLink} to="/verify" variant="nav">
               Verify
             </Link>

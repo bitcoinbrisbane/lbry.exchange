@@ -42,6 +42,11 @@ test/           Hardhat tests
   (MIT), vendored verbatim under `src/functions/src/lib/lbc`: HD keys,
   addresses, transaction building and signing, and a hub client that copes with
   both hub implementations.
+- **Sweep** — the Sweep page moves everything in an LBRY seed, wallet file
+  (unencrypted) or private key into the user's deposit address. Keys are
+  derived and the transaction signed in the browser; `utxos` looks up coins and
+  `broadcast` relays only a one-output payment to the sender's own deposit
+  addresses, so no secret reaches the functions.
 - **Front end** — connects a wallet, shows the user's deposit address with a QR
   code, polls for progress and relays `Bridge.wrap` from the user's own wallet.
   State is cached in `localStorage` for convenience only.
