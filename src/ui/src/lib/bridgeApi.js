@@ -22,6 +22,8 @@ export const bridgeApi = {
   approve: (ethAddress, lbcTxid) => call("wrap", { method: "POST", body: { ethAddress, lbcTxid } }),
   unwrap: (burnTxid) => call("unwrap", { method: "POST", body: { burnTxid } }),
   unwrapStatus: (burnTxid) => call("status", { params: { burnTxid } }),
+  utxos: (addresses) => call("utxos", { params: { address: addresses.join(",") } }),
+  broadcast: (ethAddress, hex) => call("broadcast", { method: "POST", body: { ethAddress, hex } }),
 };
 
 /** The error message a failed call carries, or a fallback. */

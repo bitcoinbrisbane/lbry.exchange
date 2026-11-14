@@ -144,6 +144,11 @@ export class LbcChain {
    * selector prefers confirmed ones.
    */
   async getUtxos(address: string): Promise<Utxo[]> {
+    return (await this.coins(address)).utxos;
+  }
+
+  /** The address's unspent outputs (see getUtxos) and whether it has any history at all. */
+  async coins(address: string): Promise<{ used: boolean; utxos: Utxo[] }> {
     const txs = await this.getHistoryTransactions(address);
     const network = this.env.lbcNetwork;
     const utxos = new Map<string, Utxo>();
@@ -162,7 +167,7 @@ export class LbcChain {
       });
     }
     for (const { tx } of txs) for (const input of tx.inputs) utxos.delete(`${input.txid}:${input.vout}`);
-    return [...utxos.values()];
+    return { used: txs.length > 0, utxos: [...utxos.values()] };
   }
 
   /** Confirmed balance of an address at the current tip (mempool coins excluded). */
